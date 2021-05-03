@@ -35,6 +35,10 @@ export interface IShellTerminalPreferences {
     shellArgs: ShellTerminalOSPreferences<string[]>
 };
 
+export interface IShellTerminalEnvironment {
+    [key: string]: string | null
+}
+
 export interface IShellTerminalServerOptions extends IBaseTerminalServerOptions {
     shellPreferences?: IShellTerminalPreferences,
     shell?: string,
@@ -42,7 +46,7 @@ export interface IShellTerminalServerOptions extends IBaseTerminalServerOptions 
     rootURI?: string,
     cols?: number,
     rows?: number,
-    env?: { [key: string]: string | null };
+    env?: IShellTerminalEnvironment,
     isPseudo?: boolean,
 }
 

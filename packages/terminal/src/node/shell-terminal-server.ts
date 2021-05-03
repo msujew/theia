@@ -16,7 +16,7 @@
 
 import { inject, injectable, named } from '@theia/core/shared/inversify';
 import { ILogger } from '@theia/core/lib/common/logger';
-import { IShellTerminalServerOptions } from '../common/shell-terminal-protocol';
+import { IShellTerminalEnvironment, IShellTerminalServerOptions } from '../common/shell-terminal-protocol';
 import { BaseTerminalServer } from '../node/base-terminal-server';
 import { ShellProcessFactory } from '../node/shell-process';
 import { ProcessManager } from '@theia/process/lib/node';
@@ -35,7 +35,7 @@ export class ShellTerminalServer extends BaseTerminalServer {
 
     create(options: IShellTerminalServerOptions): Promise<number> {
         try {
-            options.env = options.env ? options.env : {};
+            options.env = this.mergeWithProcessEnvironment(options.env);
             this.mergedCollection.applyToProcessEnvironment(options.env);
             const term = this.shellFactory(options);
             this.postCreate(term);
@@ -65,7 +65,17 @@ export class ShellTerminalServer extends BaseTerminalServer {
         });
     }
 
-    public hasChildProcesses(processId: number | undefined): Promise<boolean> {
+    mergeWithProcessEnvironment(env: IShellTerminalEnvironment | undefined): IShellTerminalEnvironment {
+        const variables = env ?? {};
+        Object.entries(process.env).forEach(([key, value]) => {
+            if (value && !(key in variables)) {
+                variables[key] = value;
+            }
+        });
+        return variables;
+    }
+
+    hasChildProcesses(processId: number | undefined): Promise<boolean> {
         if (processId) {
             // if shell has at least one child process, assume that shell is busy
             if (isWindows) {

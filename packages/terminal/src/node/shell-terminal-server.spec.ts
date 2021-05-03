@@ -15,7 +15,8 @@
  ********************************************************************************/
 import * as chai from 'chai';
 import { createTerminalTestContainer } from './test/terminal-test-container';
-import { IShellTerminalServer } from '../common/shell-terminal-protocol';
+import { IShellTerminalEnvironment, IShellTerminalServer } from '../common/shell-terminal-protocol';
+import { EnvironmentVariableMutatorType, ExtensionOwnedEnvironmentVariableMutator } from '../common/base-terminal-protocol';
 
 /**
  * Globals
@@ -36,5 +37,45 @@ describe('ShellServer', function (): void {
         const createResult = shellTerminalServer.create({});
 
         expect(await createResult).to.be.greaterThan(-1);
+    });
+
+    it('test shell terminal create with merged passed env', async function (): Promise<void> {
+        const env = { modified: 'y', replace: 'x' };
+        const map = <Map<string, ExtensionOwnedEnvironmentVariableMutator[]>>shellTerminalServer.mergedCollection.map;
+        map.set('modified', [
+            {
+                extensionIdentifier: 'test',
+                type: EnvironmentVariableMutatorType.Prepend,
+                value: 'x:'
+            },
+            {
+                extensionIdentifier: 'test',
+                type: EnvironmentVariableMutatorType.Append,
+                value: ':z'
+            }
+        ]);
+        map.set('replace', [{
+            extensionIdentifier: 'test',
+            type: EnvironmentVariableMutatorType.Replace,
+            value: 'y'
+        }]);
+        await shellTerminalServer.create({ env });
+        expect(env.modified).to.equal('x:y:z');
+        expect(env.replace).to.equal('y');
+    });
+
+    it('test shell terminal create with merged process env', async function (): Promise<void> {
+        const path = process.env['PATH']!;
+        const env: IShellTerminalEnvironment = {};
+        const prepend = 'prepend:';
+        const map = <Map<string, ExtensionOwnedEnvironmentVariableMutator[]>>shellTerminalServer.mergedCollection.map;
+        map.set('PATH', [{
+            extensionIdentifier: 'test',
+            type: EnvironmentVariableMutatorType.Prepend,
+            value: prepend
+        }]);
+        await shellTerminalServer.create({ env });
+        expect(env.PATH).to.satisfy((p: string) => p.startsWith(prepend));
+        expect(env.PATH?.substring(prepend.length)).to.equal(path);
     });
 });
