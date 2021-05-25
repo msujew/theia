@@ -27,6 +27,10 @@ export class LocalizationProviderImpl implements LocalizationProvider {
         this.localizations.push(...localization);
     }
 
+    getAvailableLanguages(): Promise<string[]> {
+        return Promise.resolve(Array.from(new Set(this.localizations.map(e => e.languageId))).sort((a, b) => a.localeCompare(b)));
+    }
+
     loadLocalizations(languageId: string): Promise<Localization[]> {
         return Promise.resolve(this.localizations.filter(e => e.languageId === languageId));
     }

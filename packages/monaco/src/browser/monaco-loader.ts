@@ -14,6 +14,8 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
+import { localizationId, LocalizationService } from '@theia/core/lib/common/i18n/localization-service';
+
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 export function loadVsRequire(context: any): Promise<any> {
@@ -44,7 +46,7 @@ export function loadMonaco(vsRequire: any): Promise<void> {
     return new Promise<void>(resolve => {
         // Monaco is only available in certain languages
         // For now, we don't have a plan to load languages contributed by language packs on startup
-        const languageId = 'de';
+        const languageId = LocalizationService.languageId = window.localStorage.getItem(localizationId) || 'en';
         if (['de', 'es', 'fr', 'it', 'ja', 'ko', 'ru', 'zh-cn', 'zh-tw'].includes(languageId)) {
             vsRequire.config({
                 'vs/nls': {
@@ -139,7 +141,5 @@ export function loadMonaco(vsRequire: any): Promise<void> {
                 resolve();
             });
         });
-        // vsRequire(['vs/nls'], () => {
-        // });
     });
 }

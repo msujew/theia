@@ -18,6 +18,7 @@ import { injectable, inject, named } from 'inversify';
 import { Disposable } from './disposable';
 import { CommandRegistry, Command } from './command';
 import { ContributionProvider } from './contribution-provider';
+import { LocalizationService } from './i18n/localization-service';
 
 /**
  * A menu entry representing an action, e.g. "New File".
@@ -74,6 +75,10 @@ export interface SubMenuOptions {
      * label will be used instead.
      */
     order?: string
+    /**
+     * Used for localization
+     */
+    scope?: string
 }
 
 export type MenuPath = string[];
@@ -132,7 +137,8 @@ export class MenuModelRegistry {
     constructor(
         @inject(ContributionProvider) @named(MenuContribution)
         protected readonly contributions: ContributionProvider<MenuContribution>,
-        @inject(CommandRegistry) protected readonly commands: CommandRegistry
+        @inject(CommandRegistry) protected readonly commands: CommandRegistry,
+        @inject(LocalizationService) protected readonly localizationService?: LocalizationService
     ) { }
 
     onStart(): void {
@@ -179,6 +185,9 @@ export class MenuModelRegistry {
     registerSubmenu(menuPath: MenuPath, label: string, options?: SubMenuOptions): Disposable {
         if (menuPath.length === 0) {
             throw new Error('The sub menu path cannot be empty.');
+        }
+        if (options?.scope && this.localizationService) {
+            label = this.localizationService.localize(options.scope, label);
         }
         const index = menuPath.length - 1;
         const menuId = menuPath[index];

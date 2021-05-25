@@ -53,6 +53,7 @@ import { UTF8 } from '../common/encodings';
 import { EnvVariablesServer } from '../common/env-variables';
 import { AuthenticationService } from './authentication-service';
 import { FormatType } from './saveable';
+import { localizationId, LocalizationProvider, LocalizationService } from '../common/i18n/localization-service';
 
 export namespace CommonMenus {
 
@@ -270,6 +271,11 @@ export namespace CommonCommands {
         category: 'Preferences'
     };
 
+    export const CONFIGURE_DISPLAY_LANGUAGE: Command = {
+        id: 'i18n.configureLanguage',
+        label: 'Configure Display Language'
+    };
+
 }
 
 export const supportCut = browser.isNative || document.queryCommandSupported('cut');
@@ -289,7 +295,8 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
         @inject(SelectionService) protected readonly selectionService: SelectionService,
         @inject(MessageService) protected readonly messageService: MessageService,
         @inject(OpenerService) protected readonly openerService: OpenerService,
-        @inject(AboutDialog) protected readonly aboutDialog: AboutDialog
+        @inject(AboutDialog) protected readonly aboutDialog: AboutDialog,
+        @inject(LocalizationProvider) protected readonly localizationProvider: LocalizationProvider
     ) { }
 
     @inject(ContextKeyService)
@@ -444,10 +451,10 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
     }
 
     registerMenus(registry: MenuModelRegistry): void {
-        registry.registerSubmenu(CommonMenus.FILE, 'File');
-        registry.registerSubmenu(CommonMenus.EDIT, 'Edit');
-        registry.registerSubmenu(CommonMenus.VIEW, 'View');
-        registry.registerSubmenu(CommonMenus.HELP, 'Help');
+        registry.registerSubmenu(CommonMenus.FILE, 'File', { scope: 'menubarControl/mFile' });
+        registry.registerSubmenu(CommonMenus.EDIT, 'Edit', { scope: 'menubarControl/mEdit' });
+        registry.registerSubmenu(CommonMenus.VIEW, 'View', { scope: 'menubarControl/mView' });
+        registry.registerSubmenu(CommonMenus.HELP, 'Help', { scope: 'menubarControl/mHelp' });
 
         registry.registerMenuAction(CommonMenus.FILE_SAVE, {
             commandId: CommonCommands.SAVE.id
@@ -774,6 +781,10 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
         commandRegistry.registerCommand(CommonCommands.SELECT_ICON_THEME, {
             execute: () => this.selectIconTheme()
         });
+
+        commandRegistry.registerCommand(CommonCommands.CONFIGURE_DISPLAY_LANGUAGE, {
+            execute: () => this.configureDisplayLanguage()
+        });
     }
 
     private findTabArea(event?: Event): ApplicationShell.Area | undefined {
@@ -985,6 +996,43 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
         } finally {
             this.shouldPreventClose = false;
         }
+    }
+
+    protected async configureDisplayLanguage(): Promise<void> {
+        const availableLanguages = await this.localizationProvider.getAvailableLanguages();
+        const items: QuickOpenItem[] = [
+            new QuickOpenItem({
+                label: 'en',
+                run: (mode: QuickOpenMode) => {
+                    if (mode !== QuickOpenMode.OPEN) {
+                        return false;
+                    }
+                    window.localStorage.removeItem(localizationId);
+                    window.location.reload();
+                    return true;
+                }
+            })
+        ];
+        for (const additionalLanguage of availableLanguages) {
+            items.push(new QuickOpenItem({
+                label: additionalLanguage,
+                run: (mode: QuickOpenMode) => {
+                    if (mode !== QuickOpenMode.OPEN) {
+                        return false;
+                    }
+                    window.localStorage.setItem(localizationId, additionalLanguage);
+                    window.location.reload();
+                    return true;
+                }
+            }));
+        }
+        this.quickOpenService.open({
+            onType: (_, accept) => accept(items)
+        }, {
+            placeholder: 'Select Display Language',
+            fuzzyMatchLabel: false,
+            selectIndex: () => items.findIndex(item => item.getLabel() === LocalizationService.languageId)
+        });
     }
 
     protected selectIconTheme(): void {

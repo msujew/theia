@@ -18,16 +18,20 @@ import { inject, injectable, postConstruct } from 'inversify';
 import { Localization, SmartTranslation } from './localization';
 
 export const localizationPath = '/services/i18n';
+export const localizationId = 'localizationId';
 
 export const LocalizationProvider = Symbol('LocalizationProvider');
 
 export interface LocalizationProvider {
+    getAvailableLanguages(): Promise<string[]>
     addLocalizations(...localization: Localization[]): void
-    loadLocalizations(languageId: string): Promise<Localization[]>;
+    loadLocalizations(languageId: string): Promise<Localization[]>
 }
 
 @injectable()
 export class LocalizationService {
+
+    static languageId: string = '';
 
     @inject(LocalizationProvider)
     protected localizationProvider: LocalizationProvider;
@@ -36,7 +40,7 @@ export class LocalizationService {
 
     @postConstruct()
     protected async init(): Promise<void> {
-        const localizations = await this.localizationProvider.loadLocalizations('de');
+        const localizations = await this.localizationProvider.loadLocalizations(LocalizationService.languageId);
         this.translations = this.buildSmartTranslations(localizations);
     }
 
@@ -69,7 +73,7 @@ export class LocalizationService {
         if (vscode) {
             const translation = vscode.contents[key];
             if (translation) {
-                value = translation;
+                value = translation.replaceAll('&&', '');
             }
         }
         return this.format(value, ...args);
