@@ -18,6 +18,18 @@ import { injectable, inject, named } from 'inversify';
 import { Event, Emitter, WaitUntilEvent } from './event';
 import { Disposable, DisposableCollection } from './disposable';
 import { ContributionProvider } from './contribution-provider';
+import { LocalizationService } from './i18n/localization-service';
+
+export interface LocalizedCommand extends Command {
+    scope: string;
+}
+
+export namespace LocalizedCommand {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    export function is(arg: LocalizedCommand | any): arg is LocalizedCommand {
+        return Command.is(arg) && 'scope' in arg;
+    }
+}
 
 /**
  * A command is a unique identifier of a function
@@ -176,7 +188,9 @@ export class CommandRegistry implements CommandService {
 
     constructor(
         @inject(ContributionProvider) @named(CommandContribution)
-        protected readonly contributionProvider: ContributionProvider<CommandContribution>
+        protected readonly contributionProvider: ContributionProvider<CommandContribution>,
+        @inject(LocalizationService)
+        protected readonly localizationService?: LocalizationService
     ) { }
 
     onStart(): void {
@@ -195,6 +209,9 @@ export class CommandRegistry implements CommandService {
         if (this._commands[command.id]) {
             console.warn(`A command ${command.id} is already registered.`);
             return Disposable.NULL;
+        }
+        if (this.localizationService && LocalizedCommand.is(command) && command.label) {
+            command.label = this.localizationService.localize(command.scope, command.label);
         }
         const toDispose = new DisposableCollection(this.doRegisterCommand(command));
         if (handler) {

@@ -42,6 +42,18 @@ export function loadVsRequire(context: any): Promise<any> {
 
 export function loadMonaco(vsRequire: any): Promise<void> {
     return new Promise<void>(resolve => {
+        // Monaco is only available in certain languages
+        // For now, we don't have a plan to load languages contributed by language packs on startup
+        const languageId = 'de';
+        if (['de', 'es', 'fr', 'it', 'ja', 'ko', 'ru', 'zh-cn', 'zh-tw'].includes(languageId)) {
+            vsRequire.config({
+                'vs/nls': {
+                    availableLanguages: {
+                        '*': languageId
+                    }
+                }
+            });
+        }
         vsRequire(['vs/editor/editor.main'], () => {
             vsRequire([
                 'vs/platform/commands/common/commands',
@@ -127,5 +139,7 @@ export function loadMonaco(vsRequire: any): Promise<void> {
                 resolve();
             });
         });
+        // vsRequire(['vs/nls'], () => {
+        // });
     });
 }

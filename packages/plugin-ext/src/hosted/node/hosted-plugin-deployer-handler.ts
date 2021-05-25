@@ -20,6 +20,7 @@ import { ILogger } from '@theia/core';
 import { PluginDeployerHandler, PluginDeployerEntry, PluginEntryPoint, DeployedPlugin, PluginDependencies } from '../../common/plugin-protocol';
 import { HostedPluginReader } from './plugin-reader';
 import { Deferred } from '@theia/core/lib/common/promise-util';
+import { LocalizationProvider } from '@theia/core/lib/common/i18n/localization-service';
 
 @injectable()
 export class HostedPluginDeployerHandler implements PluginDeployerHandler {
@@ -29,6 +30,9 @@ export class HostedPluginDeployerHandler implements PluginDeployerHandler {
 
     @inject(HostedPluginReader)
     private readonly reader: HostedPluginReader;
+
+    @inject(LocalizationProvider)
+    private readonly localizationProvider: LocalizationProvider;
 
     private readonly deployedLocations = new Map<string, Set<string>>();
 
@@ -129,6 +133,9 @@ export class HostedPluginDeployerHandler implements PluginDeployerHandler {
             const { type } = entry;
             const deployed: DeployedPlugin = { metadata, type };
             deployed.contributes = this.reader.readContribution(manifest);
+            if (entryPoint === 'backend' && deployed.contributes?.localizations) {
+                this.localizationProvider.addLocalizations(...deployed.contributes.localizations);
+            }
             deployedPlugins.set(metadata.model.id, deployed);
             this.logger.info(`Deploying ${entryPoint} plugin "${metadata.model.name}@${metadata.model.version}" from "${metadata.model.entryPoint[entryPoint] || pluginPath}"`);
         } catch (e) {

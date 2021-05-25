@@ -89,6 +89,20 @@ export interface PluginPackageContribution {
     problemPatterns?: PluginProblemPatternContribution[];
     jsonValidation?: PluginJsonValidationContribution[];
     resourceLabelFormatters?: ResourceLabelFormatter[];
+    localizations?: PluginPackageLocalization[];
+}
+
+export interface PluginPackageLocalization {
+    languageId: string;
+    languageName?: string;
+    localizedLanguageName?: string;
+    translations: PluginPackageTranslation[];
+    minimalTranslations?: { [key: string]: string };
+}
+
+export interface PluginPackageTranslation {
+    id: string;
+    path: string;
 }
 
 export interface PluginPackageCustomEditor {
@@ -526,6 +540,21 @@ export interface PluginContribution {
     problemMatchers?: ProblemMatcherContribution[];
     problemPatterns?: ProblemPatternContribution[];
     resourceLabelFormatters?: ResourceLabelFormatter[];
+    localizations?: Localization[];
+}
+
+export interface Localization {
+    languageId: string;
+    languageName?: string;
+    localizedLanguageName?: string;
+    translations: Translation[];
+    minimalTranslations?: { [key: string]: string };
+}
+
+export interface Translation {
+    id: string;
+    version: string;
+    contents: { [scope: string]: { [key: string]: string } }
 }
 
 export interface SnippetContribution {

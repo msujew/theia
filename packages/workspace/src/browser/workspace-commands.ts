@@ -17,7 +17,7 @@
 import { inject, injectable } from '@theia/core/shared/inversify';
 import URI from '@theia/core/lib/common/uri';
 import { SelectionService } from '@theia/core/lib/common/selection-service';
-import { Command, CommandContribution, CommandRegistry } from '@theia/core/lib/common/command';
+import { Command, CommandContribution, CommandRegistry, LocalizedCommand } from '@theia/core/lib/common/command';
 import { MenuContribution, MenuModelRegistry } from '@theia/core/lib/common/menu';
 import { CommonMenus } from '@theia/core/lib/browser/common-frontend-contribution';
 import { FileDialogService } from '@theia/filesystem/lib/browser';
@@ -49,47 +49,54 @@ export namespace WorkspaceCommands {
     // `OPEN_FILE` and `OPEN_FOLDER` must be available only on Linux and Windows in electron.
     // `OPEN` must *not* be available on Windows and Linux in electron.
     // VS Code does the same. See: https://github.com/eclipse-theia/theia/pull/3202#issuecomment-430585357
-    export const OPEN: Command & { dialogLabel: string } = {
+    export const OPEN: LocalizedCommand & { dialogLabel: string } = {
         id: 'workspace:open',
         category: FILE_CATEGORY,
         label: 'Open...',
-        dialogLabel: 'Open'
+        dialogLabel: 'Open',
+        scope: 'workspaceActions/openFileFolder'
     };
     // No `label`. Otherwise, it shows up in the `Command Palette`.
-    export const OPEN_FILE: Command & { dialogLabel: string } = {
+    export const OPEN_FILE: LocalizedCommand & { dialogLabel: string } = {
         id: 'workspace:openFile',
         category: FILE_CATEGORY,
-        dialogLabel: 'Open File'
+        dialogLabel: 'Open File',
+        scope: 'fileActions.contribution/openFile'
     };
     export const OPEN_FOLDER: Command & { dialogLabel: string } = {
         id: 'workspace:openFolder',
         dialogLabel: 'Open Folder' // No `label`. Otherwise, it shows up in the `Command Palette`.
     };
-    export const OPEN_WORKSPACE: Command & { dialogLabel: string } = {
+    export const OPEN_WORKSPACE: LocalizedCommand & { dialogLabel: string } = {
         id: 'workspace:openWorkspace',
         category: FILE_CATEGORY,
         label: 'Open Workspace...',
-        dialogLabel: 'Open Workspace'
+        dialogLabel: 'Open Workspace',
+        scope: 'workspaceActions/openWorkspaceAction'
     };
-    export const OPEN_RECENT_WORKSPACE: Command = {
+    export const OPEN_RECENT_WORKSPACE: LocalizedCommand = {
         id: 'workspace:openRecent',
         category: FILE_CATEGORY,
-        label: 'Open Recent Workspace...'
+        label: 'Open Recent Workspace...',
+        scope: 'windowActions/openRecent'
     };
-    export const CLOSE: Command = {
+    export const CLOSE: LocalizedCommand = {
         id: 'workspace:close',
         category: WORKSPACE_CATEGORY,
-        label: 'Close Workspace'
+        label: 'Close Workspace',
+        scope: 'workspaceActions/closeWorkspace'
     };
-    export const NEW_FILE: Command = {
+    export const NEW_FILE: LocalizedCommand = {
         id: 'file.newFile',
         category: FILE_CATEGORY,
-        label: 'New File'
+        label: 'New File',
+        scope: 'fileActions.contribution/newFile'
     };
-    export const NEW_FOLDER: Command = {
+    export const NEW_FOLDER: LocalizedCommand = {
         id: 'file.newFolder',
         category: FILE_CATEGORY,
-        label: 'New Folder'
+        label: 'New Folder',
+        scope: 'fileActions/newFolder'
     };
     export const FILE_OPEN_WITH = (opener: OpenHandler): Command => ({
         id: `file.openWith.${opener.id}`

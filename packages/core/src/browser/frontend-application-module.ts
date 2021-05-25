@@ -98,6 +98,7 @@ import { EncodingRegistry } from './encoding-registry';
 import { EncodingService } from '../common/encoding-service';
 import { AuthenticationService, AuthenticationServiceImpl } from '../browser/authentication-service';
 import { DecorationsService, DecorationsServiceImpl } from './decorations-service';
+import { localizationPath, LocalizationProvider, LocalizationService } from '../common/i18n/localization-service';
 
 export { bindResourceProvider, bindMessageService, bindPreferenceService };
 
@@ -340,4 +341,10 @@ export const frontendApplicationModule = new ContainerModule((bind, unbind, isBo
 
     bind(AuthenticationService).to(AuthenticationServiceImpl).inSingletonScope();
     bind(DecorationsService).to(DecorationsServiceImpl).inSingletonScope();
+
+    bind(LocalizationService).toSelf().inSingletonScope();
+    bind(LocalizationProvider).toDynamicValue(ctx => {
+        const connection = ctx.container.get(WebSocketConnectionProvider);
+        return connection.createProxy<LocalizationProvider>(localizationPath);
+    }).inSingletonScope();
 });
