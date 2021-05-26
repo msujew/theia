@@ -27,7 +27,7 @@ export interface LocalizationProvider {
     setCurrentLanguage(languageId: string): Promise<void>
     getAvailableLanguages(): Promise<string[]>
     addLocalizations(...localization: Localization[]): void
-    loadLocalizations(): Promise<Localization[]>
+    loadLocalizations(languageId: string): Promise<Localization[]>
 }
 
 export interface LocalizationProviderSync {
@@ -35,7 +35,7 @@ export interface LocalizationProviderSync {
     setCurrentLanguage(languageId: string): void
     getAvailableLanguages(): string[]
     addLocalizations(...localization: Localization[]): void
-    loadLocalizations(): Localization[]
+    loadLocalizations(languageId: string): Localization[]
 }
 
 @injectable()
@@ -50,8 +50,8 @@ export class LocalizationService {
 
     @postConstruct()
     protected async init(): Promise<void> {
-        await this.localizationProvider.setCurrentLanguage(LocalizationService.languageId);
-        const localizations = await this.localizationProvider.loadLocalizations();
+        this.localizationProvider.setCurrentLanguage(LocalizationService.languageId);
+        const localizations = await this.localizationProvider.loadLocalizations(LocalizationService.languageId);
         this.translations = this.buildSmartTranslations(localizations);
     }
 

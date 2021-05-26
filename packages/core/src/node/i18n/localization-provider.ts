@@ -40,8 +40,8 @@ export class LocalizationProviderImpl implements LocalizationProviderSync {
         return Array.from(new Set(this.localizations.map(e => e.languageId))).sort((a, b) => a.localeCompare(b));
     }
 
-    loadLocalizations(): Localization[] {
-        return this.localizations.filter(e => e.languageId === this.currentLanguage);
+    loadLocalizations(languageId: string): Localization[] {
+        return this.localizations.filter(e => e.languageId === languageId);
     }
 
 }
