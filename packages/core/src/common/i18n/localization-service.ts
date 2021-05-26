@@ -23,15 +23,25 @@ export const localizationId = 'localizationId';
 export const LocalizationProvider = Symbol('LocalizationProvider');
 
 export interface LocalizationProvider {
+    getCurrentLanguage(): Promise<string>
+    setCurrentLanguage(languageId: string): Promise<void>
     getAvailableLanguages(): Promise<string[]>
     addLocalizations(...localization: Localization[]): void
-    loadLocalizations(languageId: string): Promise<Localization[]>
+    loadLocalizations(): Promise<Localization[]>
+}
+
+export interface LocalizationProviderSync {
+    getCurrentLanguage(): string
+    setCurrentLanguage(languageId: string): void
+    getAvailableLanguages(): string[]
+    addLocalizations(...localization: Localization[]): void
+    loadLocalizations(): Localization[]
 }
 
 @injectable()
 export class LocalizationService {
 
-    static languageId: string = '';
+    static languageId: string = 'en';
 
     @inject(LocalizationProvider)
     protected localizationProvider: LocalizationProvider;
@@ -40,7 +50,8 @@ export class LocalizationService {
 
     @postConstruct()
     protected async init(): Promise<void> {
-        const localizations = await this.localizationProvider.loadLocalizations(LocalizationService.languageId);
+        await this.localizationProvider.setCurrentLanguage(LocalizationService.languageId);
+        const localizations = await this.localizationProvider.loadLocalizations();
         this.translations = this.buildSmartTranslations(localizations);
     }
 
@@ -96,9 +107,4 @@ export class LocalizationService {
         }
         return result;
     }
-
-    localizeVsCode(index: number, args: string[]): string {
-        return '';
-    }
-
 }

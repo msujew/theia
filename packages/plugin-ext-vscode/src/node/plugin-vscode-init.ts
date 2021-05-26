@@ -19,9 +19,9 @@
 import * as theia from '@theia/plugin';
 import { BackendInitializationFn, PluginAPIFactory, Plugin, emptyPlugin } from '@theia/plugin-ext';
 import { VSCODE_DEFAULT_API_VERSION } from '../common/plugin-vscode-types';
+import * as nls from './plugin-vscode-nls';
 
 /** Set up en as a default locale for VS Code extensions using vscode-nls */
-process.env['VSCODE_NLS_CONFIG'] = JSON.stringify({ locale: 'en', availableLanguages: {} });
 process.env['VSCODE_PID'] = process.env['THEIA_PARENT_PID'];
 
 const pluginsApiImpl = new Map<string, typeof theia>();
@@ -67,14 +67,17 @@ export const doInitialization: BackendInitializationFn = (apiFactory: PluginAPIF
 function overrideInternalLoad(): void {
     const module = require('module');
     const vscodeModuleName = 'vscode';
+    const vscodeNlsModuleName = 'vscode-nls';
     // save original load method
     const internalLoad = module._load;
 
     // if we try to resolve theia module, return the filename entry to use cache.
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     module._load = function (request: string, parent: any, isMain: {}): any {
-        if (request !== vscodeModuleName) {
+        if (request !== vscodeModuleName && request !== vscodeNlsModuleName) {
             return internalLoad.apply(this, arguments);
+        } else if (request === vscodeNlsModuleName) {
+            return nls;
         }
 
         const plugin = findPlugin(parent.filename);

@@ -16,23 +16,32 @@
 
 import { injectable } from 'inversify';
 import { Localization } from '../../common/i18n/localization';
-import { LocalizationProvider } from '../../common/i18n/localization-service';
+import { LocalizationProviderSync } from '../../common/i18n/localization-service';
 
 @injectable()
-export class LocalizationProviderImpl implements LocalizationProvider {
+export class LocalizationProviderImpl implements LocalizationProviderSync {
 
     protected localizations: Localization[] = [];
+    protected currentLanguage: string = 'en';
 
     addLocalizations(...localization: Localization[]): void {
         this.localizations.push(...localization);
     }
 
-    getAvailableLanguages(): Promise<string[]> {
-        return Promise.resolve(Array.from(new Set(this.localizations.map(e => e.languageId))).sort((a, b) => a.localeCompare(b)));
+    setCurrentLanguage(languageId: string): void {
+        this.currentLanguage = languageId;
     }
 
-    loadLocalizations(languageId: string): Promise<Localization[]> {
-        return Promise.resolve(this.localizations.filter(e => e.languageId === languageId));
+    getCurrentLanguage(): string {
+        return this.currentLanguage;
+    }
+
+    getAvailableLanguages(): string[] {
+        return Array.from(new Set(this.localizations.map(e => e.languageId))).sort((a, b) => a.localeCompare(b));
+    }
+
+    loadLocalizations(): Localization[] {
+        return this.localizations.filter(e => e.languageId === this.currentLanguage);
     }
 
 }

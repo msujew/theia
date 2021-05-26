@@ -1000,28 +1000,18 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
 
     protected async configureDisplayLanguage(): Promise<void> {
         const availableLanguages = await this.localizationProvider.getAvailableLanguages();
-        const items: QuickOpenItem[] = [
-            new QuickOpenItem({
-                label: 'en',
-                run: (mode: QuickOpenMode) => {
-                    if (mode !== QuickOpenMode.OPEN) {
-                        return false;
-                    }
-                    window.localStorage.removeItem(localizationId);
-                    window.location.reload();
-                    return true;
-                }
-            })
-        ];
-        for (const additionalLanguage of availableLanguages) {
+        const items: QuickOpenItem[] = [];
+        for (const additionalLanguage of ['en', ...availableLanguages]) {
             items.push(new QuickOpenItem({
                 label: additionalLanguage,
                 run: (mode: QuickOpenMode) => {
                     if (mode !== QuickOpenMode.OPEN) {
                         return false;
                     }
-                    window.localStorage.setItem(localizationId, additionalLanguage);
-                    window.location.reload();
+                    if (additionalLanguage !== LocalizationService.languageId) {
+                        window.localStorage.setItem(localizationId, additionalLanguage);
+                        window.location.reload();
+                    }
                     return true;
                 }
             }));
