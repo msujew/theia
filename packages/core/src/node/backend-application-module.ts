@@ -30,8 +30,9 @@ import { EnvVariablesServerImpl } from './env-variables';
 import { ConnectionContainerModule } from './messaging/connection-container-module';
 import { QuickPickService, quickPickServicePath } from '../common/quick-pick-service';
 import { WsRequestValidator, WsRequestValidatorContribution } from './ws-request-validators';
-import { localizationPath, LocalizationProvider } from '../common/i18n/localization-service';
+import { LocalizationProvider } from './i18n/localization-provider';
 import { LocalizationProviderImpl } from './i18n/localization-provider';
+import { localizationPath } from '../common/i18n/localization-service';
 
 decorate(injectable(), ApplicationPackage);
 

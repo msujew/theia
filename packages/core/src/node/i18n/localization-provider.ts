@@ -15,17 +15,32 @@
  ********************************************************************************/
 
 import { injectable } from 'inversify';
-import { Localization } from '../../common/i18n/localization';
-import { LocalizationProviderSync } from '../../common/i18n/localization-service';
+import { Localization } from '../../common/i18n/localization-service';
+
+export const LocalizationProvider = Symbol('LocalizationProvider');
+
+export interface LocalizationProvider {
+    getCurrentLanguage(): string
+    setCurrentLanguage(languageId: string): void
+    getAvailableLanguages(): string[]
+    addLocalizations(...localizations: Localization[]): void
+    loadLocalization(languageId: string): Localization
+}
 
 @injectable()
-export class LocalizationProviderImpl implements LocalizationProviderSync {
+export class LocalizationProviderImpl implements LocalizationProvider {
 
-    protected localizations: Localization[] = [];
+    protected localizations: Map<string, Localization> = new Map();
     protected currentLanguage: string = 'en';
 
-    addLocalizations(...localization: Localization[]): void {
-        this.localizations.push(...localization);
+    addLocalizations(...localizations: Localization[]): void {
+        for (const localization of localizations) {
+            if (!this.localizations.has(localization.languageId)) {
+                this.localizations.set(localization.languageId, localization);
+            } else {
+                Object.assign(this.localizations.get(localization.languageId)!.translations, localization.translations);
+            }
+        }
     }
 
     setCurrentLanguage(languageId: string): void {
@@ -37,11 +52,15 @@ export class LocalizationProviderImpl implements LocalizationProviderSync {
     }
 
     getAvailableLanguages(): string[] {
-        return Array.from(new Set(this.localizations.map(e => e.languageId))).sort((a, b) => a.localeCompare(b));
+        return Array.from(this.localizations.keys()).sort((a, b) => a.localeCompare(b));
     }
 
-    loadLocalizations(languageId: string): Localization[] {
-        return this.localizations.filter(e => e.languageId === languageId);
+    loadLocalization(languageId: string): Localization {
+        return this.localizations.get(languageId) ||
+        {
+            languageId,
+            translations: {}
+        };
     }
 
 }

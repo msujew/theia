@@ -14,20 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-export interface Localization {
-    languageId: string;
-    languageName?: string;
-    localizedLanguageName?: string;
-    translations?: Translation[];
-}
+/**
+ *
+ */
 
-export interface Translation {
-    id: string;
-    version: string;
-    contents: { [scope: string]: { [key: string]: string } };
-}
-
-export interface SmartTranslation {
-    id: string;
-    contents: { [key: string]: string };
-}

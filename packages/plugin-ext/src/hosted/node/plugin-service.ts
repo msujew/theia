@@ -21,7 +21,7 @@ import { ContributionProvider } from '@theia/core';
 import { ExtPluginApiProvider, ExtPluginApi } from '../../common/plugin-ext-api-contribution';
 import { HostedPluginDeployerHandler } from './hosted-plugin-deployer-handler';
 import { PluginDeployerImpl } from '../../main/node/plugin-deployer-impl';
-import { LocalizationProvider, LocalizationProviderSync } from '@theia/core/lib/common/i18n/localization-service';
+import { LocalizationProvider } from '@theia/core/lib/node/i18n/localization-provider';
 import { loadManifest } from './plugin-manifest-loader';
 
 @injectable()
@@ -36,7 +36,7 @@ export class HostedPluginServerImpl implements HostedPluginServer {
     protected readonly pluginDeployer: PluginDeployerImpl;
 
     @inject(LocalizationProvider)
-    protected readonly localizationProvider: LocalizationProviderSync;
+    protected readonly localizationProvider: LocalizationProvider;
 
     @inject(ContributionProvider)
     @named(Symbol.for(ExtPluginApiProvider))

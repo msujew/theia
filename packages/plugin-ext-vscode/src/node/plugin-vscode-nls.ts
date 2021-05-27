@@ -17,32 +17,41 @@
 import * as fs from 'fs';
 
 const nlsJson = process.env['VSCODE_NLS_CONFIG']!;
-export const languageId: string = JSON.parse(nlsJson).locale;
-
-/**
- *
- */
-export function loadMessageBundle(fileName: string): (index: number, value: null, ...args: string[]) => string {
-    const nlsFileName = getNlsFileName(fileName);
-    let nlsFile: string;
-    try {
-        nlsFile = fs.readFileSync(nlsFileName.file, { encoding: 'utf8' });
-    } catch {
-        nlsFile = fs.readFileSync(nlsFileName.defaultFile, { encoding: 'utf8' });
-    }
-
-    const messages = JSON.parse(nlsFile) as string[];
-    return (index, _, ...args) => localize(messages, index, args);
-}
-
-export function config(): (fileName: string) => (index: number, value: null, ...args: string[]) => string {
-    return loadMessageBundle;
-}
+export const locale: string = JSON.parse(nlsJson).locale;
 
 export enum MessageFormat {
     file = 'file',
     bundle = 'bundle',
     both = 'both'
+}
+
+export enum BundleFormat {
+    standalone = 'standalone',
+    languagePack = 'languagePack'
+}
+
+export interface Options {
+    locale?: string;
+    messageFormat?: MessageFormat;
+}
+
+let options: Options;
+
+/**
+ *
+ */
+export function loadMessageBundle(fileName: string): (index: number, value: null, ...args: string[]) => string {
+    try {
+        const messages = loadMessagesFromFileName(fileName);
+        return (index, _, ...args) => localize(messages, index, args);
+    } catch {
+        return () => 'Error loading messages!';
+    }
+}
+
+export function config(opts?: Options): (fileName: string) => (index: number, value: null, ...args: string[]) => string {
+    options = opts || {};
+    return loadMessageBundle;
 }
 
 function localize(messages: string[], index: number, args: string[]): string {
@@ -69,11 +78,29 @@ function format(message: string, args: string[]): string {
 
 function getNlsFileName(fileName: string): { file: string, defaultFile: string } {
     let suffix = '';
-    if (languageId && languageId !== 'en') {
-        suffix = '.' + languageId;
+    if (locale && locale !== 'en') {
+        suffix = '.' + locale;
     }
     const fileWithoutExtension = fileName.substring(0, fileName.lastIndexOf('.'));
     const file = fileWithoutExtension + '.nls' + suffix + '.json';
     const defaultFile = fileWithoutExtension + '.nls.json';
     return { file, defaultFile };
+}
+
+function loadMessagesFromFileName(fileName: string): string[] {
+    const messages: string[] = [];
+    if (options.messageFormat === MessageFormat.both || options.messageFormat === MessageFormat.file) {
+        const nlsFileName = getNlsFileName(fileName);
+        let nlsFile: string;
+        if (fs.existsSync(nlsFileName.file)) {
+            nlsFile = fs.readFileSync(nlsFileName.file, { encoding: 'utf8' });
+        } else {
+            nlsFile = fs.readFileSync(nlsFileName.defaultFile, { encoding: 'utf8' });
+        }
+        messages.push(...JSON.parse(nlsFile) as string[]);
+    }
+    if (options.messageFormat === MessageFormat.both || options.messageFormat === MessageFormat.bundle) {
+        // TODO
+    }
+    return messages;
 }

@@ -54,14 +54,14 @@ export namespace WorkspaceCommands {
         category: FILE_CATEGORY,
         label: 'Open...',
         dialogLabel: 'Open',
-        scope: 'workspaceActions/openFileFolder'
+        scope: 'vscode/workspaceActions/openFileFolder'
     };
     // No `label`. Otherwise, it shows up in the `Command Palette`.
     export const OPEN_FILE: LocalizedCommand & { dialogLabel: string } = {
         id: 'workspace:openFile',
         category: FILE_CATEGORY,
         dialogLabel: 'Open File',
-        scope: 'fileActions.contribution/openFile'
+        scope: 'vscode/fileActions.contribution/openFile'
     };
     export const OPEN_FOLDER: Command & { dialogLabel: string } = {
         id: 'workspace:openFolder',
@@ -72,31 +72,31 @@ export namespace WorkspaceCommands {
         category: FILE_CATEGORY,
         label: 'Open Workspace...',
         dialogLabel: 'Open Workspace',
-        scope: 'workspaceActions/openWorkspaceAction'
+        scope: 'vscode/workspaceActions/openWorkspaceAction'
     };
     export const OPEN_RECENT_WORKSPACE: LocalizedCommand = {
         id: 'workspace:openRecent',
         category: FILE_CATEGORY,
         label: 'Open Recent Workspace...',
-        scope: 'windowActions/openRecent'
+        scope: 'vscode/windowActions/openRecent'
     };
     export const CLOSE: LocalizedCommand = {
         id: 'workspace:close',
         category: WORKSPACE_CATEGORY,
         label: 'Close Workspace',
-        scope: 'workspaceActions/closeWorkspace'
+        scope: 'vscode/workspaceActions/closeWorkspace'
     };
     export const NEW_FILE: LocalizedCommand = {
         id: 'file.newFile',
         category: FILE_CATEGORY,
         label: 'New File',
-        scope: 'fileActions.contribution/newFile'
+        scope: 'vscode/fileActions.contribution/newFile'
     };
     export const NEW_FOLDER: LocalizedCommand = {
         id: 'file.newFolder',
         category: FILE_CATEGORY,
         label: 'New Folder',
-        scope: 'fileActions/newFolder'
+        scope: 'vscode/fileActions/newFolder'
     };
     export const FILE_OPEN_WITH = (opener: OpenHandler): Command => ({
         id: `file.openWith.${opener.id}`

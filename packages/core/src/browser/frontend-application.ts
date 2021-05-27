@@ -25,6 +25,9 @@ import { FrontendApplicationStateService } from './frontend-application-state';
 import { preventNavigation, parseCssTime, animationFrame } from './browser';
 import { CorePreferences } from './core-preferences';
 import { WindowService } from './window/window-service';
+import { localizationId, LocalizationService } from '../common/i18n/localization-service';
+
+LocalizationService.languageId = window.localStorage.getItem(localizationId) || 'en';
 
 /**
  * Clients can implement to get a callback for contributing widgets to a shell on start.

@@ -15,27 +15,23 @@
  ********************************************************************************/
 
 import { inject, injectable, postConstruct } from 'inversify';
-import { Localization, SmartTranslation } from './localization';
 
 export const localizationPath = '/services/i18n';
 export const localizationId = 'localizationId';
-
 export const LocalizationProvider = Symbol('LocalizationProvider');
+
+export interface Localization {
+    languageId: string;
+    languageName?: string;
+    localizedLanguageName?: string;
+    translations: { [key: string]: string };
+}
 
 export interface LocalizationProvider {
     getCurrentLanguage(): Promise<string>
     setCurrentLanguage(languageId: string): Promise<void>
     getAvailableLanguages(): Promise<string[]>
-    addLocalizations(...localization: Localization[]): void
-    loadLocalizations(languageId: string): Promise<Localization[]>
-}
-
-export interface LocalizationProviderSync {
-    getCurrentLanguage(): string
-    setCurrentLanguage(languageId: string): void
-    getAvailableLanguages(): string[]
-    addLocalizations(...localization: Localization[]): void
-    loadLocalizations(languageId: string): Localization[]
+    loadLocalization(languageId: string): Promise<Localization>
 }
 
 @injectable()
@@ -46,46 +42,19 @@ export class LocalizationService {
     @inject(LocalizationProvider)
     protected localizationProvider: LocalizationProvider;
 
-    protected translations = new Map<string, SmartTranslation>();
+    protected localization: Localization;
 
     @postConstruct()
     protected async init(): Promise<void> {
         this.localizationProvider.setCurrentLanguage(LocalizationService.languageId);
-        const localizations = await this.localizationProvider.loadLocalizations(LocalizationService.languageId);
-        this.translations = this.buildSmartTranslations(localizations);
-    }
-
-    protected buildSmartTranslations(localizations: Localization[]): Map<string, SmartTranslation> {
-        const map = new Map<string, SmartTranslation>();
-        localizations.flatMap(e => e.translations || []).forEach(e => {
-            const translation: SmartTranslation = {
-                id: e.id,
-                contents: {}
-            };
-            for (const [scope, item] of Object.entries(e.contents)) {
-                let shortScope = scope;
-                const slashIndex = shortScope.lastIndexOf('/');
-                if (slashIndex > 0) {
-                    shortScope = shortScope.substring(slashIndex + 1);
-                }
-                for (const [key, value] of Object.entries(item)) {
-                    const fullKey = `${shortScope}/${key}`;
-                    translation.contents[fullKey] = value;
-                }
-            }
-            map.set(e.id, translation);
-        });
-        return map;
+        this.localization = await this.localizationProvider.loadLocalization(LocalizationService.languageId);
     }
 
     localize(key: string, defaultValue: string, ...args: string[]): string {
-        const vscode = this.translations.get('vscode');
         let value = defaultValue;
-        if (vscode) {
-            const translation = vscode.contents[key];
-            if (translation) {
-                value = translation.replaceAll('&&', '');
-            }
+        const translation = this.localization.translations[key];
+        if (translation) {
+            value = translation.replaceAll('&&', '');
         }
         return this.format(value, ...args);
     }
