@@ -19,7 +19,7 @@ import URI from '@theia/core/lib/common/uri';
 import { isChrome } from '@theia/core/lib/browser/browser';
 import { environment } from '@theia/core/shared/@theia/application-package/lib/environment';
 import { SelectionService } from '@theia/core/lib/common/selection-service';
-import { Command, CommandContribution, CommandRegistry } from '@theia/core/lib/common/command';
+import { CommandContribution, CommandRegistry, LocalizedCommand } from '@theia/core/lib/common/command';
 import { UriAwareCommandHandler } from '@theia/core/lib/common/uri-command-handler';
 import { FileDownloadService } from './file-download-service';
 
@@ -67,16 +67,18 @@ export class FileDownloadCommandContribution implements CommandContribution {
 
 export namespace FileDownloadCommands {
 
-    export const DOWNLOAD: Command = {
+    export const DOWNLOAD: LocalizedCommand = {
         id: 'file.download',
         category: 'File',
-        label: 'Download'
+        label: 'Download',
+        scope: 'file.download'
     };
 
-    export const COPY_DOWNLOAD_LINK: Command = {
+    export const COPY_DOWNLOAD_LINK: LocalizedCommand = {
         id: 'file.copyDownloadLink',
         category: 'File',
-        label: 'Copy Download Link'
+        label: 'Copy Download Link',
+        scope: 'file.copyDownloadLink'
     };
 
 }

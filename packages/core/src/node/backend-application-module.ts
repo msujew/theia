@@ -33,6 +33,7 @@ import { WsRequestValidator, WsRequestValidatorContribution } from './ws-request
 import { LocalizationProvider } from './i18n/localization-provider';
 import { LocalizationProviderImpl } from './i18n/localization-provider';
 import { localizationPath } from '../common/i18n/localization-service';
+import { LocalizationContribution, LocalizationRegistry, TheiaLocalizationContribution } from './i18n/localization-contribution';
 
 decorate(injectable(), ApplicationPackage);
 
@@ -96,4 +97,8 @@ export const backendApplicationModule = new ContainerModule(bind => {
             return localizationProvider;
         })
     ).inSingletonScope();
+    bind(LocalizationRegistry).toSelf().inSingletonScope();
+    bindContributionProvider(bind, LocalizationContribution);
+    bind(TheiaLocalizationContribution).toSelf().inSingletonScope();
+    bind(LocalizationContribution).toService(TheiaLocalizationContribution);
 });
