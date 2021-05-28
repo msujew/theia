@@ -29,6 +29,7 @@ import { LabelProvider } from '@theia/core/lib/browser/label-provider';
 import URI from '@theia/core/lib/common/uri';
 import { StatusBar, StatusBarAlignment } from '@theia/core/lib/browser';
 import { DebugPreferences } from './debug-preferences';
+import { LocalizationInfo, LocalizationService } from '@theia/core/lib/common/i18n/localization-service';
 
 @injectable()
 export class DebugPrefixConfiguration implements CommandContribution, CommandHandler, QuickOpenContribution, QuickOpenHandler, QuickOpenModel {
@@ -56,6 +57,9 @@ export class DebugPrefixConfiguration implements CommandContribution, CommandHan
 
     @inject(StatusBar)
     protected readonly statusBar: StatusBar;
+
+    @inject(LocalizationService)
+    protected readonly localizationService: LocalizationService;
 
     readonly prefix = 'debug ';
     readonly description = 'Debug Configuration';
@@ -168,7 +172,7 @@ export class DebugPrefixConfiguration implements CommandContribution, CommandHan
         this.statusBar.setElement(this.statusBarId, {
             alignment: StatusBarAlignment.LEFT,
             text: text.length ? `${icon} ${text}` : icon,
-            tooltip: this.command.label,
+            tooltip: this.command.label && LocalizationInfo.localize(this.command.label, this.localizationService),
             command: this.command.id,
         });
     }

@@ -34,6 +34,10 @@ export interface LocalizationInfo {
 }
 
 export namespace LocalizationInfo {
+    export function is(arg: Object | undefined ): arg is LocalizationInfo {
+        return typeof arg === 'object' && 'id' in arg && 'value' in arg;
+    }
+
     export function localize(label: string | LocalizationInfo, service?: LocalizationService): string {
         if (typeof label === 'string') {
             return label;

@@ -51,6 +51,7 @@ import { ColorContribution } from '@theia/core/lib/browser/color-application-con
 import { ColorRegistry } from '@theia/core/lib/browser/color-registry';
 import { DebugFunctionBreakpoint } from './model/debug-function-breakpoint';
 import { DebugBreakpoint } from './model/debug-breakpoint';
+import { LocalizationInfo, LocalizationService } from '@theia/core/lib/common/i18n/localization-service';
 
 export namespace DebugMenus {
     export const DEBUG = [...MAIN_MENU_BAR, '6_debug'];
@@ -420,6 +421,9 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
     @inject(EditorManager)
     protected readonly editorManager: EditorManager;
 
+    @inject(LocalizationService)
+    protected readonly localizationService: LocalizationService;
+
     constructor() {
         super({
             widgetId: DebugWidget.ID,
@@ -482,9 +486,10 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
         super.registerMenus(menus);
         const registerMenuActions = (menuPath: string[], ...commands: Command[]) => {
             for (const [index, command] of commands.entries()) {
+                const label = LocalizationInfo.is(command.label) ? LocalizationInfo.localize(command.label, ) : command.label;
                 menus.registerMenuAction(menuPath, {
                     commandId: command.id,
-                    label: command.label && command.label.startsWith('Debug: ') && command.label.slice('Debug: '.length) || command.label,
+                    label: label && label.startsWith('Debug: ') && label.slice('Debug: '.length) || label,
                     icon: command.iconClass,
                     order: String.fromCharCode('a'.charCodeAt(0) + index)
                 });

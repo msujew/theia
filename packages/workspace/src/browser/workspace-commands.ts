@@ -98,47 +98,47 @@ export namespace WorkspaceCommands {
     export const FILE_RENAME: Command = {
         id: 'file.rename',
         category: FILE_CATEGORY,
-        label: 'Rename'
+        label: { value: 'Rename', id: 'vscode/fileActions/rename' }
     };
     export const FILE_DELETE: Command = {
         id: 'file.delete',
         category: FILE_CATEGORY,
-        label: 'Delete'
+        label: { value: 'Delete', id: 'vscode/fileActions/delete' }
     };
     export const FILE_DUPLICATE: Command = {
         id: 'file.duplicate',
         category: FILE_CATEGORY,
-        label: 'Duplicate'
+        label: { value: 'Duplicate', id: 'file.duplicate' }
     };
     export const FILE_COMPARE: Command = {
         id: 'file.compare',
         category: FILE_CATEGORY,
-        label: 'Compare with Each Other'
+        label: { value: 'Compare with Each Other', id: 'vscode/fileActions.contribution/compareSelected' }
     };
     export const ADD_FOLDER: Command = {
         id: 'workspace:addFolder',
         category: WORKSPACE_CATEGORY,
-        label: 'Add Folder to Workspace...'
+        label: { value: 'Add Folder to Workspace...', id: 'vscode/workspaceCommands/addFolderToWorkspace' }
     };
     export const REMOVE_FOLDER: Command = {
         id: 'workspace:removeFolder',
         category: WORKSPACE_CATEGORY,
-        label: 'Remove Folder from Workspace'
+        label: { value: 'Remove Folder from Workspace', id: 'vscode/fileCommands/removeFolderFromWorkspace' }
     };
     export const SAVE_WORKSPACE_AS: Command = {
         id: 'workspace:saveAs',
         category: WORKSPACE_CATEGORY,
-        label: 'Save Workspace As...'
+        label: { value: 'Save Workspace As...', id: 'vscode/workspaceActions/saveWorkspaceAsAction' }
     };
     export const OPEN_WORKSPACE_FILE: Command = {
         id: 'workspace:openConfigFile',
         category: WORKSPACE_CATEGORY,
-        label: 'Open Workspace Configuration File'
+        label: { value: 'Open Workspace Configuration File', id: 'vscode/workspaceActions/openWorkspaceConfigFile' }
     };
     export const SAVE_AS: Command = {
         id: 'file.saveAs',
         category: 'File',
-        label: 'Save As...',
+        label: { value: 'Save As...', id: 'vscode/fileCommands/saveAs' }
     };
 }
 

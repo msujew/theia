@@ -413,7 +413,7 @@ export class FileNavigatorContribution extends AbstractViewContribution<FileNavi
         });
         registry.registerMenuAction(NavigatorContextMenu.CLIPBOARD, {
             commandId: FileNavigatorCommands.COPY_RELATIVE_FILE_PATH.id,
-            label: 'Copy Relative Path',
+            label: { value: 'Copy Relative Path', id: 'vscode/fileActions.contribution/copyRelativePath' },
             order: 'd'
         });
         registry.registerMenuAction(NavigatorContextMenu.CLIPBOARD, {
@@ -452,7 +452,7 @@ export class FileNavigatorContribution extends AbstractViewContribution<FileNavi
         });
         registry.registerMenuAction(NavigatorContextMenu.MODIFICATION, {
             commandId: FileNavigatorCommands.COLLAPSE_ALL.id,
-            label: 'Collapse All',
+            label: { value: 'Collapse All', id: 'vscode/treeView/collapseAll' },
             order: 'z2'
         });
 
@@ -502,13 +502,13 @@ export class FileNavigatorContribution extends AbstractViewContribution<FileNavi
         toolbarRegistry.registerItem({
             id: FileNavigatorCommands.REFRESH_NAVIGATOR.id,
             command: FileNavigatorCommands.REFRESH_NAVIGATOR.id,
-            tooltip: 'Refresh Explorer',
+            tooltip: { value: 'Refresh Explorer', id: 'vscode/explorerView/refreshExplorer' },
             priority: 0,
         });
         toolbarRegistry.registerItem({
             id: FileNavigatorCommands.COLLAPSE_ALL.id,
             command: FileNavigatorCommands.COLLAPSE_ALL.id,
-            tooltip: 'Collapse All',
+            tooltip: { value: 'Collapse All', id: 'vscode/explorerView/collapseExplorerFolders' },
             priority: 1,
         });
         this.registerMoreToolbarItem({

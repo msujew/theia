@@ -122,7 +122,7 @@ export class HostedPluginManagerClient {
     @inject(HostedPluginPreferences)
     protected readonly hostedPluginPreferences: HostedPluginPreferences;
     @inject(LocalizationService)
-    protected readonly localizationService: LocalizationService
+    protected readonly localizationService: LocalizationService;
 
     @postConstruct()
     protected async init(): Promise<void> {

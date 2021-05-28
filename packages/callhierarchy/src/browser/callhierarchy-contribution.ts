@@ -15,7 +15,7 @@
  ********************************************************************************/
 
 import { injectable, inject } from '@theia/core/shared/inversify';
-import { MenuModelRegistry, Command, CommandRegistry } from '@theia/core/lib/common';
+import { MenuModelRegistry, CommandRegistry, Command } from '@theia/core/lib/common';
 import { AbstractViewContribution, OpenViewArguments, KeybindingRegistry } from '@theia/core/lib/browser';
 import { EDITOR_CONTEXT_MENU } from '@theia/editor/lib/browser';
 import { CallHierarchyTreeWidget } from './callhierarchy-tree/callhierarchy-tree-widget';
@@ -30,7 +30,7 @@ export const CALL_HIERARCHY_LABEL = 'Call Hierarchy';
 export namespace CallHierarchyCommands {
     export const OPEN: Command = {
         id: 'callhierarchy:open',
-        label: 'Open Call Hierarchy'
+        label: { value: 'Open Call Hierarchy', id: 'callHierarchy.open' }
     };
 }
 
