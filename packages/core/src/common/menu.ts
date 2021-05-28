@@ -18,7 +18,7 @@ import { injectable, inject, named } from 'inversify';
 import { Disposable } from './disposable';
 import { CommandRegistry, Command } from './command';
 import { ContributionProvider } from './contribution-provider';
-import { LocalizationService } from './i18n/localization-service';
+import { LocalizationInfo, LocalizationService } from './i18n/localization-service';
 
 /**
  * A menu entry representing an action, e.g. "New File".
@@ -27,7 +27,7 @@ export interface MenuAction {
     /**
      * The command to execute.
      */
-    commandId: string
+    commandId: string;
     /**
      * In addition to the mandatory command property, an alternative command can be defined.
      * It will be shown and invoked when pressing Alt while opening a menu.
@@ -36,22 +36,22 @@ export interface MenuAction {
     /**
      * A specific label for this action. If not specified the command label or command id will be used.
      */
-    label?: string
+    label?: string | LocalizationInfo;
     /**
      * Icon class(es). If not specified the icon class associated with the specified command
      * (i.e. `command.iconClass`) will be used if it exists.
      */
-    icon?: string
+    icon?: string;
     /**
      * Menu entries are sorted in ascending order based on their `order` strings. If omitted the determined
      * label will be used instead.
      */
-    order?: string
+    order?: string;
     /**
      * Optional expression which will be evaluated by the {@link ContextKeyService} to determine visibility
      * of the action, e.g. `resourceLangId == markdown`.
      */
-    when?: string
+    when?: string;
 }
 
 export namespace MenuAction {
@@ -75,10 +75,6 @@ export interface SubMenuOptions {
      * label will be used instead.
      */
     order?: string
-    /**
-     * Used for localization
-     */
-    scope?: string
 }
 
 export type MenuPath = string[];
@@ -153,6 +149,9 @@ export class MenuModelRegistry {
      * @returns a disposable which, when called, will remove the menu action again.
      */
     registerMenuAction(menuPath: MenuPath, item: MenuAction): Disposable {
+        if (item.label) {
+            item.label = LocalizationInfo.localize(item.label, this.localizationService);
+        }
         const menuNode = new ActionMenuNode(item, this.commands);
         return this.registerMenuNode(menuPath, menuNode);
     }
@@ -182,24 +181,22 @@ export class MenuModelRegistry {
      * Note that if the menu already existed and was registered with a different label an error
      * will be thrown.
      */
-    registerSubmenu(menuPath: MenuPath, label: string, options?: SubMenuOptions): Disposable {
+    registerSubmenu(menuPath: MenuPath, label: string | LocalizationInfo, options?: SubMenuOptions): Disposable {
         if (menuPath.length === 0) {
             throw new Error('The sub menu path cannot be empty.');
         }
-        if (options?.scope && this.localizationService) {
-            label = this.localizationService.localize(options.scope, label);
-        }
+        const stringLabel = LocalizationInfo.localize(label, this.localizationService);
         const index = menuPath.length - 1;
         const menuId = menuPath[index];
         const groupPath = index === 0 ? [] : menuPath.slice(0, index);
         const parent = this.findGroup(groupPath, options);
         let groupNode = this.findSubMenu(parent, menuId, options);
         if (!groupNode) {
-            groupNode = new CompositeMenuNode(menuId, label, options);
+            groupNode = new CompositeMenuNode(menuId, stringLabel, options);
             return parent.addNode(groupNode);
         } else {
             if (!groupNode.label) {
-                groupNode.label = label;
+                groupNode.label = stringLabel;
             } else if (groupNode.label !== label) {
                 throw new Error("The group '" + menuPath.join('/') + "' already has a different label.");
             }
@@ -434,13 +431,13 @@ export class ActionMenuNode implements MenuNode {
 
     get label(): string {
         if (this.action.label) {
-            return this.action.label;
+            return LocalizationInfo.localize(this.action.label);
         }
         const cmd = this.commands.getCommand(this.action.commandId);
         if (!cmd) {
             throw new Error(`A command with id '${this.action.commandId}' does not exist.`);
         }
-        return cmd.label || cmd.id;
+        return LocalizationInfo.localize(cmd.label || cmd.id);
     }
 
     get icon(): string | undefined {

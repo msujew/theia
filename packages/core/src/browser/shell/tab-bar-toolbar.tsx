@@ -27,6 +27,7 @@ import { ContextKeyService } from '../context-key-service';
 import { Event, Emitter } from '../../common/event';
 import { ContextMenuRenderer, Anchor } from '../context-menu-renderer';
 import { MenuModelRegistry } from '../../common/menu';
+import { LocalizationInfo, LocalizationService } from '../../common/i18n/localization-service';
 
 /**
  * Factory for instantiating tab-bar toolbars.
@@ -57,6 +58,9 @@ export class TabBarToolbar extends ReactWidget {
 
     @inject(ContextMenuRenderer)
     protected readonly contextMenuRenderer: ContextMenuRenderer;
+
+    @inject(LocalizationService)
+    protected readonly localizationService: LocalizationService;
 
     constructor() {
         super();
@@ -114,7 +118,7 @@ export class TabBarToolbar extends ReactWidget {
         let innerText = '';
         const classNames = [];
         if (item.text) {
-            for (const labelPart of this.labelParser.parse(item.text)) {
+            for (const labelPart of this.labelParser.parse(LocalizationInfo.localize(item.text, this.localizationService))) {
                 if (typeof labelPart !== 'string' && LabelIcon.is(labelPart)) {
                     const className = `fa fa-${labelPart.name}${labelPart.animation ? ' fa-' + labelPart.animation : ''}`;
                     classNames.push(...className.split(' '));
@@ -128,7 +132,8 @@ export class TabBarToolbar extends ReactWidget {
         if (iconClass) {
             classNames.push(iconClass);
         }
-        const tooltip = item.tooltip || (command && command.label);
+        const tooltip = item.tooltip && LocalizationInfo.localize(item.tooltip, this.localizationService)
+            || (command && command.label && LocalizationInfo.localize(command.label, this.localizationService));
         const toolbarItemClassNames = this.getToolbarItemClassNames(command?.id);
         return <div key={item.id}
             className={toolbarItemClassNames}
@@ -292,7 +297,7 @@ export interface TabBarToolbarItem {
      * The type of animation can be either `spin` or `pulse`.
      * Look [here](http://fontawesome.io/examples/#animated) for more information to animated icons.
      */
-    readonly text?: string;
+    readonly text?: string | LocalizationInfo;
 
     /**
      * Priority among the items. Can be negative. The smaller the number the left-most the item will be placed in the toolbar. It is `0` by default.
@@ -310,7 +315,7 @@ export interface TabBarToolbarItem {
     /**
      * Optional tooltip for the item.
      */
-    readonly tooltip?: string;
+    readonly tooltip?: string | LocalizationInfo;
 
     /**
      * Optional icon for the item.
@@ -401,6 +406,9 @@ export class TabBarToolbarRegistry implements FrontendApplicationContribution {
     @inject(ContributionProvider)
     @named(TabBarToolbarContribution)
     protected readonly contributionProvider: ContributionProvider<TabBarToolbarContribution>;
+
+    @inject(LocalizationService)
+    protected readonly localizationService: LocalizationService;
 
     protected readonly onDidChangeEmitter = new Emitter<void>();
     readonly onDidChange: Event<void> = this.onDidChangeEmitter.event;

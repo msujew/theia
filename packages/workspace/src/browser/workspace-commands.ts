@@ -17,7 +17,7 @@
 import { inject, injectable } from '@theia/core/shared/inversify';
 import URI from '@theia/core/lib/common/uri';
 import { SelectionService } from '@theia/core/lib/common/selection-service';
-import { Command, CommandContribution, CommandRegistry, LocalizedCommand } from '@theia/core/lib/common/command';
+import { Command, CommandContribution, CommandRegistry } from '@theia/core/lib/common/command';
 import { MenuContribution, MenuModelRegistry } from '@theia/core/lib/common/menu';
 import { CommonMenus } from '@theia/core/lib/browser/common-frontend-contribution';
 import { FileDialogService } from '@theia/filesystem/lib/browser';
@@ -37,6 +37,7 @@ import { WorkspaceInputDialog } from './workspace-input-dialog';
 import { Emitter, Event } from '@theia/core/lib/common';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { FileStat } from '@theia/filesystem/lib/common/files';
+import { LocalizationInfo, LocalizationService } from '@theia/core/lib/common/i18n/localization-service';
 
 const validFilename: (arg: string) => boolean = require('valid-filename');
 
@@ -49,54 +50,47 @@ export namespace WorkspaceCommands {
     // `OPEN_FILE` and `OPEN_FOLDER` must be available only on Linux and Windows in electron.
     // `OPEN` must *not* be available on Windows and Linux in electron.
     // VS Code does the same. See: https://github.com/eclipse-theia/theia/pull/3202#issuecomment-430585357
-    export const OPEN: LocalizedCommand & { dialogLabel: string } = {
+    export const OPEN: Command & { dialogLabel: string | LocalizationInfo } = {
         id: 'workspace:open',
         category: FILE_CATEGORY,
-        label: 'Open...',
-        dialogLabel: 'Open',
-        scope: 'vscode/workspaceActions/openFileFolder'
+        label: { value: 'Open...', id: 'vscode/workspaceActions/openFileFolder' },
+        dialogLabel: { value: 'Open', id: 'vscode/dialogMainService/open' },
     };
     // No `label`. Otherwise, it shows up in the `Command Palette`.
-    export const OPEN_FILE: LocalizedCommand & { dialogLabel: string } = {
+    export const OPEN_FILE: Command & { dialogLabel: string | LocalizationInfo } = {
         id: 'workspace:openFile',
         category: FILE_CATEGORY,
-        dialogLabel: 'Open File',
-        scope: 'vscode/fileActions.contribution/openFile'
+        dialogLabel: { value: 'Open File', id: 'vscode/fileActions.contribution/openFile' }
     };
-    export const OPEN_FOLDER: Command & { dialogLabel: string } = {
+    export const OPEN_FOLDER: Command & { dialogLabel: string | LocalizationInfo } = {
         id: 'workspace:openFolder',
-        dialogLabel: 'Open Folder' // No `label`. Otherwise, it shows up in the `Command Palette`.
+        dialogLabel: { value: 'Open Folder', id: 'vscode/dialogMainService/openFolder' } // No `label`. Otherwise, it shows up in the `Command Palette`.
     };
-    export const OPEN_WORKSPACE: LocalizedCommand & { dialogLabel: string } = {
+    export const OPEN_WORKSPACE: Command & { dialogLabel: string | LocalizationInfo } = {
         id: 'workspace:openWorkspace',
         category: FILE_CATEGORY,
-        label: 'Open Workspace...',
-        dialogLabel: 'Open Workspace',
-        scope: 'vscode/workspaceActions/openWorkspaceAction'
+        label: { value: 'Open Workspace...', id: 'vscode/workspaceActions/openWorkspaceAction' },
+        dialogLabel: { value: 'Open Workspace', id: 'vscode/dialogMainService/openWorkspaceTitle' }
     };
-    export const OPEN_RECENT_WORKSPACE: LocalizedCommand = {
+    export const OPEN_RECENT_WORKSPACE: Command = {
         id: 'workspace:openRecent',
         category: FILE_CATEGORY,
-        label: 'Open Recent Workspace...',
-        scope: 'vscode/windowActions/openRecent'
+        label: { value: 'Open Recent Workspace...', id: 'vscode/windowActions/openRecent' }
     };
-    export const CLOSE: LocalizedCommand = {
+    export const CLOSE: Command = {
         id: 'workspace:close',
         category: WORKSPACE_CATEGORY,
-        label: 'Close Workspace',
-        scope: 'vscode/workspaceActions/closeWorkspace'
+        label: { value: 'Close Workspace', id: 'vscode/workspaceActions/closeWorkspace' },
     };
-    export const NEW_FILE: LocalizedCommand = {
+    export const NEW_FILE: Command = {
         id: 'file.newFile',
         category: FILE_CATEGORY,
-        label: 'New File',
-        scope: 'vscode/fileActions.contribution/newFile'
+        label: { value: 'New File', id: 'vscode/fileActions.contribution/newFile' }
     };
-    export const NEW_FOLDER: LocalizedCommand = {
+    export const NEW_FOLDER: Command = {
         id: 'file.newFolder',
         category: FILE_CATEGORY,
-        label: 'New Folder',
-        scope: 'vscode/fileActions/newFolder'
+        label: { value: 'New Folder', id: 'vscode/fileActions/newFolder' }
     };
     export const FILE_OPEN_WITH = (opener: OpenHandler): Command => ({
         id: `file.openWith.${opener.id}`
@@ -203,6 +197,7 @@ export class WorkspaceCommandContribution implements CommandContribution {
     @inject(WorkspaceDeleteHandler) protected readonly deleteHandler: WorkspaceDeleteHandler;
     @inject(WorkspaceDuplicateHandler) protected readonly duplicateHandler: WorkspaceDuplicateHandler;
     @inject(WorkspaceCompareHandler) protected readonly compareHandler: WorkspaceCompareHandler;
+    @inject(LocalizationService) protected readonly localizationService: LocalizationService;
 
     private readonly onDidCreateNewFileEmitter = new Emitter<DidCreateNewResourceEvent>();
     private readonly onDidCreateNewFolderEmitter = new Emitter<DidCreateNewResourceEvent>();
@@ -315,7 +310,7 @@ export class WorkspaceCommandContribution implements CommandContribution {
                 isVisible: () => this.workspaceService.isMultiRootWorkspaceEnabled,
                 execute: async () => {
                     const uri = await this.fileDialogService.showOpenDialog({
-                        title: WorkspaceCommands.ADD_FOLDER.label!,
+                        title: LocalizationInfo.localize(WorkspaceCommands.ADD_FOLDER.label!, this.localizationService),
                         canSelectFiles: false,
                         canSelectFolders: true
                     });

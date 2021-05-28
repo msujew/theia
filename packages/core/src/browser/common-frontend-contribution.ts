@@ -451,10 +451,10 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
     }
 
     registerMenus(registry: MenuModelRegistry): void {
-        registry.registerSubmenu(CommonMenus.FILE, 'File', { scope: 'menubarControl/mFile' });
-        registry.registerSubmenu(CommonMenus.EDIT, 'Edit', { scope: 'menubarControl/mEdit' });
-        registry.registerSubmenu(CommonMenus.VIEW, 'View', { scope: 'menubarControl/mView' });
-        registry.registerSubmenu(CommonMenus.HELP, 'Help', { scope: 'menubarControl/mHelp' });
+        registry.registerSubmenu(CommonMenus.FILE, { value: 'File', id: 'vscode/menubarControl/mFile' });
+        registry.registerSubmenu(CommonMenus.EDIT, { value: 'Edit', id: 'vscode/menubarControl/mEdit' });
+        registry.registerSubmenu(CommonMenus.VIEW, { value: 'View', id: 'vscode/menubarControl/mView' });
+        registry.registerSubmenu(CommonMenus.HELP, { value: 'Help', id: 'vscode/menubarControl/mHelp' });
 
         registry.registerMenuAction(CommonMenus.FILE_SAVE, {
             commandId: CommonCommands.SAVE.id

@@ -18,18 +18,7 @@ import { injectable, inject, named } from 'inversify';
 import { Event, Emitter, WaitUntilEvent } from './event';
 import { Disposable, DisposableCollection } from './disposable';
 import { ContributionProvider } from './contribution-provider';
-import { LocalizationService } from './i18n/localization-service';
-
-export interface LocalizedCommand extends Command {
-    scope: string;
-}
-
-export namespace LocalizedCommand {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    export function is(arg: LocalizedCommand | any): arg is LocalizedCommand {
-        return Command.is(arg) && 'scope' in arg;
-    }
-}
+import { LocalizationInfo, LocalizationService } from './i18n/localization-service';
 
 /**
  * A command is a unique identifier of a function
@@ -44,7 +33,7 @@ export interface Command {
     /**
      * A label of this command.
      */
-    label?: string;
+    label?: string | LocalizationInfo;
     /**
      * An icon class of this command.
      */
@@ -65,8 +54,10 @@ export namespace Command {
     /** Comparator function for when sorting commands */
     export function compareCommands(a: Command, b: Command): number {
         if (a.label && b.label) {
-            const aCommand = (a.category ? `${a.category}: ${a.label}` : a.label).toLowerCase();
-            const bCommand = (b.category ? `${b.category}: ${b.label}` : b.label).toLowerCase();
+            const aLabel = LocalizationInfo.localize(a.label);
+            const bLabel = LocalizationInfo.localize(b.label);
+            const aCommand = (a.category ? `${a.category}: ${aLabel}` : aLabel).toLowerCase();
+            const bCommand = (b.category ? `${b.category}: ${bLabel}` : bLabel).toLowerCase();
             return (aCommand).localeCompare(bCommand);
         } else {
             return 0;
@@ -210,8 +201,8 @@ export class CommandRegistry implements CommandService {
             console.warn(`A command ${command.id} is already registered.`);
             return Disposable.NULL;
         }
-        if (this.localizationService && LocalizedCommand.is(command) && command.label) {
-            command.label = this.localizationService.localize(command.scope, command.label);
+        if (command.label) {
+            command.label = LocalizationInfo.localize(command.label, this.localizationService);
         }
         const toDispose = new DisposableCollection(this.doRegisterCommand(command));
         if (handler) {

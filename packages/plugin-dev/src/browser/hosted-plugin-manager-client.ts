@@ -28,6 +28,7 @@ import { DebugSessionManager } from '@theia/debug/lib/browser/debug-session-mana
 import { HostedPluginPreferences } from './hosted-plugin-preferences';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
+import { LocalizationInfo, LocalizationService } from '@theia/core/lib/common/i18n/localization-service';
 
 /**
  * Commands to control Hosted plugin instances.
@@ -120,6 +121,8 @@ export class HostedPluginManagerClient {
     protected readonly debugSessionManager: DebugSessionManager;
     @inject(HostedPluginPreferences)
     protected readonly hostedPluginPreferences: HostedPluginPreferences;
+    @inject(LocalizationService)
+    protected readonly localizationService: LocalizationService
 
     @postConstruct()
     protected async init(): Promise<void> {
@@ -268,7 +271,7 @@ export class HostedPluginManagerClient {
         const rootNode = DirNode.createRoot(workspaceFolder);
 
         const dialog = this.openFileDialogFactory({
-            title: HostedPluginCommands.SELECT_PATH.label!,
+            title: LocalizationInfo.localize(HostedPluginCommands.SELECT_PATH.label!, this.localizationService),
             openLabel: 'Select',
             canSelectFiles: false,
             canSelectFolders: true,

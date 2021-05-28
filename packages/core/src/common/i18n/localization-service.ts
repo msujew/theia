@@ -27,6 +27,44 @@ export interface Localization {
     translations: { [key: string]: string };
 }
 
+export interface LocalizationInfo {
+    id: string;
+    value: string;
+    args?: (string | LocalizationInfo)[];
+}
+
+export namespace LocalizationInfo {
+    export function localize(label: string | LocalizationInfo, service?: LocalizationService): string {
+        if (typeof label === 'string') {
+            return label;
+        } else {
+            let content = service ? service.localize(label.id, label.value) : label.value;
+            if (label.args) {
+                content = format(content, ...label.args.map(arg => localize(arg, service)));
+            }
+            return content;
+        }
+    }
+
+    export function format(message: string, ...args: string[]): string {
+        let result = message;
+        if (args.length > 0) {
+            result = message.replace(/\{(\d+)\}/g, (match, rest) => {
+                const index = rest[0];
+                const arg = args[index];
+                let replacement = match;
+                if (typeof arg === 'string') {
+                    replacement = arg;
+                } else if (typeof arg === 'number' || typeof arg === 'boolean' || !arg) {
+                    replacement = String(arg);
+                }
+                return replacement;
+            });
+        }
+        return result;
+    }
+}
+
 export interface LocalizationProvider {
     getCurrentLanguage(): Promise<string>
     setCurrentLanguage(languageId: string): Promise<void>
@@ -56,24 +94,6 @@ export class LocalizationService {
         if (translation) {
             value = translation.replaceAll('&&', '');
         }
-        return this.format(value, ...args);
-    }
-
-    protected format(message: string, ...args: string[]): string {
-        let result = message;
-        if (args.length > 0) {
-            result = message.replace(/\{(\d+)\}/g, (match, rest) => {
-                const index = rest[0];
-                const arg = args[index];
-                let replacement = match;
-                if (typeof arg === 'string') {
-                    replacement = arg;
-                } else if (typeof arg === 'number' || typeof arg === 'boolean' || !arg) {
-                    replacement = String(arg);
-                }
-                return replacement;
-            });
-        }
-        return result;
+        return LocalizationInfo.format(value, ...args);
     }
 }

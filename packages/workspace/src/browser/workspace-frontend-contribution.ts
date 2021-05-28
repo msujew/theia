@@ -34,6 +34,7 @@ import { EncodingRegistry } from '@theia/core/lib/browser/encoding-registry';
 import { UTF8 } from '@theia/core/lib/common/encodings';
 import { DisposableCollection } from '@theia/core/lib/common/disposable';
 import { PreferenceConfigurations } from '@theia/core/lib/browser/preferences/preference-configurations';
+import { LocalizationInfo, LocalizationService } from '@theia/core/lib/common/i18n/localization-service';
 
 export enum WorkspaceStates {
     /**
@@ -66,6 +67,7 @@ export class WorkspaceFrontendContribution implements CommandContribution, Keybi
     @inject(WorkspacePreferences) protected preferences: WorkspacePreferences;
     @inject(SelectionService) protected readonly selectionService: SelectionService;
     @inject(CommandRegistry) protected readonly commandRegistry: CommandRegistry;
+    @inject(LocalizationService) protected readonly localizationService: LocalizationService;
 
     @inject(ContextKeyService)
     protected readonly contextKeyService: ContextKeyService;
@@ -184,12 +186,12 @@ export class WorkspaceFrontendContribution implements CommandContribution, Keybi
         if (!isOSX && this.isElectron()) {
             menus.registerMenuAction(CommonMenus.FILE_OPEN, {
                 commandId: WorkspaceCommands.OPEN_FILE.id,
-                label: `${WorkspaceCommands.OPEN_FILE.dialogLabel}...`,
+                label: `${LocalizationInfo.localize(WorkspaceCommands.OPEN_FILE.dialogLabel, this.localizationService)}...`,
                 order: 'a01'
             });
             menus.registerMenuAction(CommonMenus.FILE_OPEN, {
                 commandId: WorkspaceCommands.OPEN_FOLDER.id,
-                label: `${WorkspaceCommands.OPEN_FOLDER.dialogLabel}...`,
+                label: `${LocalizationInfo.localize(WorkspaceCommands.OPEN_FOLDER.dialogLabel, this.localizationService)}...`,
                 order: 'a02'
             });
         }
@@ -254,7 +256,7 @@ export class WorkspaceFrontendContribution implements CommandContribution, Keybi
         }
         const [rootStat] = await this.workspaceService.roots;
         const destinationUri = await this.fileDialogService.showOpenDialog({
-            title: WorkspaceCommands.OPEN.dialogLabel,
+            title: LocalizationInfo.localize(WorkspaceCommands.OPEN.dialogLabel, this.localizationService),
             canSelectFolders: true,
             canSelectFiles: true
         }, rootStat);
@@ -280,7 +282,7 @@ export class WorkspaceFrontendContribution implements CommandContribution, Keybi
      */
     protected async doOpenFile(): Promise<URI | undefined> {
         const props: OpenFileDialogProps = {
-            title: WorkspaceCommands.OPEN_FILE.dialogLabel,
+            title: LocalizationInfo.localize(WorkspaceCommands.OPEN_FILE.dialogLabel, this.localizationService),
             canSelectFolders: false,
             canSelectFiles: true
         };
@@ -306,7 +308,7 @@ export class WorkspaceFrontendContribution implements CommandContribution, Keybi
      */
     protected async doOpenFolder(): Promise<URI | undefined> {
         const props: OpenFileDialogProps = {
-            title: WorkspaceCommands.OPEN_FOLDER.dialogLabel,
+            title: LocalizationInfo.localize(WorkspaceCommands.OPEN_FOLDER.dialogLabel, this.localizationService),
             canSelectFolders: true,
             canSelectFiles: false
         };
@@ -372,12 +374,12 @@ export class WorkspaceFrontendContribution implements CommandContribution, Keybi
             type,
             electron,
             supportMultiRootWorkspace
-        });
+        }, this.localizationService);
     }
 
     protected async closeWorkspace(): Promise<void> {
         const dialog = new ConfirmDialog({
-            title: WorkspaceCommands.CLOSE.label!,
+            title: LocalizationInfo.localize(WorkspaceCommands.CLOSE.label!, this.localizationService),
             msg: 'Do you really want to close the workspace?'
         });
         if (await dialog.open()) {
@@ -391,7 +393,7 @@ export class WorkspaceFrontendContribution implements CommandContribution, Keybi
         let selected: URI | undefined;
         do {
             selected = await this.fileDialogService.showSaveDialog({
-                title: WorkspaceCommands.SAVE_WORKSPACE_AS.label!,
+                title: LocalizationInfo.localize(WorkspaceCommands.SAVE_WORKSPACE_AS.label!, this.localizationService),
                 filters: WorkspaceFrontendContribution.DEFAULT_FILE_FILTER
             });
             if (selected) {
@@ -438,7 +440,7 @@ export class WorkspaceFrontendContribution implements CommandContribution, Keybi
         do {
             selected = await this.fileDialogService.showSaveDialog(
                 {
-                    title: WorkspaceCommands.SAVE_AS.label!,
+                    title: LocalizationInfo.localize(WorkspaceCommands.SAVE_AS.label!, this.localizationService),
                     filters: {},
                     inputValue: uri.path.base
                 }, stat);
@@ -531,9 +533,10 @@ export namespace WorkspaceFrontendContribution {
     /**
      * Returns with an `OpenFileDialogProps` for opening the `Open Workspace` dialog.
      */
-    export function createOpenWorkspaceOpenFileDialogProps(options: Readonly<{ type: OS.Type, electron: boolean, supportMultiRootWorkspace: boolean }>): OpenFileDialogProps {
+    export function createOpenWorkspaceOpenFileDialogProps(options: Readonly<{ type: OS.Type, electron: boolean, supportMultiRootWorkspace: boolean }>,
+        localizationService?: LocalizationService): OpenFileDialogProps {
         const { electron, type, supportMultiRootWorkspace } = options;
-        const title = WorkspaceCommands.OPEN_WORKSPACE.dialogLabel;
+        const title = LocalizationInfo.localize(WorkspaceCommands.OPEN_WORKSPACE.dialogLabel, localizationService);
         // If browser
         if (!electron) {
             // and multi-root workspace is supported, it is always folder + workspace files.
