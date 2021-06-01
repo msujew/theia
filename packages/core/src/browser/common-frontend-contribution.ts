@@ -53,6 +53,7 @@ import { UTF8 } from '../common/encodings';
 import { EnvVariablesServer } from '../common/env-variables';
 import { AuthenticationService } from './authentication-service';
 import { FormatType } from './saveable';
+import { locale, localeId, LocalizationProvider } from '../common/i18n/localization';
 
 export namespace CommonMenus {
 
@@ -97,177 +98,182 @@ export namespace CommonCommands {
 
     export const CUT: Command = {
         id: 'core.cut',
-        label: 'Cut'
+        label: { value: 'Cut', id: 'vscode/fileActions.contribution/cut' }
     };
     export const COPY: Command = {
         id: 'core.copy',
-        label: 'Copy'
+        label: { value: 'Copy', id: 'vscode/fileActions/copyFile' }
     };
     export const PASTE: Command = {
         id: 'core.paste',
-        label: 'Paste'
+        label: { value: 'Paste', id: 'vscode/fileActions/pasteFile' }
     };
 
     export const COPY_PATH: Command = {
         id: 'core.copy.path',
-        label: 'Copy Path'
+        label: { value: 'Copy Path', id: 'vscode/fileActions.contribution/copyPath' }
     };
 
     export const UNDO: Command = {
         id: 'core.undo',
-        label: 'Undo'
+        label: { value: 'Undo', id: 'vscode/textInputActions/undo' }
     };
     export const REDO: Command = {
         id: 'core.redo',
-        label: 'Redo'
+        label: { value: 'Redo', id: 'vscode/textInputActions/redo' }
     };
     export const SELECT_ALL: Command = {
         id: 'core.selectAll',
-        label: 'Select All'
+        label: { value: 'Select All', id: 'vscode/textInputActions/selectAll' }
     };
 
     export const FIND: Command = {
         id: 'core.find',
-        label: 'Find'
+        label: { value: 'Find', id: 'vscode/simpleFindReplaceWidget/label.find' }
     };
     export const REPLACE: Command = {
         id: 'core.replace',
-        label: 'Replace'
+        label: { value: 'Replace', id: 'vscode/simpleFindReplaceWidget/label.replace' }
     };
 
     export const NEXT_TAB: Command = {
         id: 'core.nextTab',
         category: VIEW_CATEGORY,
-        label: 'Switch to Next Tab'
+        label: { value: 'Switch to Next Tab', id: 'vscode/menubar/mShowNextTab' }
     };
     export const PREVIOUS_TAB: Command = {
         id: 'core.previousTab',
         category: VIEW_CATEGORY,
-        label: 'Switch to Previous Tab'
+        label: { value: 'Switch to Previous Tab', id: 'vscode/menubar/mShowPreviousTab' }
     };
     export const NEXT_TAB_IN_GROUP: Command = {
         id: 'core.nextTabInGroup',
         category: VIEW_CATEGORY,
-        label: 'Switch to Next Tab in Group'
+        label: { value: 'Switch to Next Tab in Group', id: 'core.nextTabInGroup' }
     };
     export const PREVIOUS_TAB_IN_GROUP: Command = {
         id: 'core.previousTabInGroup',
         category: VIEW_CATEGORY,
-        label: 'Switch to Previous Tab in Group'
+        label: { value: 'Switch to Previous Tab in Group', id: 'core.previousTabInGroup' }
     };
     export const NEXT_TAB_GROUP: Command = {
         id: 'core.nextTabGroup',
         category: VIEW_CATEGORY,
-        label: 'Switch to Next Tab Group'
+        label: { value: 'Switch to Next Tab Group', id: 'core.nextTabGroup' }
     };
     export const PREVIOUS_TAB_GROUP: Command = {
         id: 'core.previousTabBar',
         category: VIEW_CATEGORY,
-        label: 'Switch to Previous Tab Group'
+        label: { value: 'Switch to Previous Tab Group', id: 'core.previousTabBar' }
     };
     export const CLOSE_TAB: Command = {
         id: 'core.close.tab',
         category: VIEW_CATEGORY,
-        label: 'Close Tab'
+        label: { value: 'Close Tab', id: 'core.close.tab' }
     };
     export const CLOSE_OTHER_TABS: Command = {
         id: 'core.close.other.tabs',
         category: VIEW_CATEGORY,
-        label: 'Close Other Tabs'
+        label: { value: 'Close Other Tabs', id: 'core.close.other.tabs' }
     };
     export const CLOSE_RIGHT_TABS: Command = {
         id: 'core.close.right.tabs',
         category: VIEW_CATEGORY,
-        label: 'Close Tabs to the Right'
+        label: { value: 'Close Tabs to the Right', id: 'core.close.right.tabs' }
     };
     export const CLOSE_ALL_TABS: Command = {
         id: 'core.close.all.tabs',
         category: VIEW_CATEGORY,
-        label: 'Close All Tabs'
+        label: { value: 'Close All Tabs', id: 'core.close.all.tabs' }
     };
     export const CLOSE_MAIN_TAB: Command = {
         id: 'core.close.main.tab',
         category: VIEW_CATEGORY,
-        label: 'Close Tab in Main Area'
+        label: { value: 'Close Tab in Main Area', id: 'core.close.main.tab' }
     };
     export const CLOSE_OTHER_MAIN_TABS: Command = {
         id: 'core.close.other.main.tabs',
         category: VIEW_CATEGORY,
-        label: 'Close Other Tabs in Main Area'
+        label: { value: 'Close Other Tabs in Main Area', id: 'core.close.other.main.tabs' }
     };
     export const CLOSE_ALL_MAIN_TABS: Command = {
         id: 'core.close.all.main.tabs',
         category: VIEW_CATEGORY,
-        label: 'Close All Tabs in Main Area'
+        label: { value: 'Close All Tabs in Main Area', id: 'core.close.all.main.tabs' }
     };
     export const COLLAPSE_PANEL: Command = {
         id: 'core.collapse.tab',
         category: VIEW_CATEGORY,
-        label: 'Collapse Side Panel'
+        label: { value: 'Collapse Side Panel', id: 'core.collapse.tab' }
     };
     export const COLLAPSE_ALL_PANELS: Command = {
         id: 'core.collapse.all.tabs',
         category: VIEW_CATEGORY,
-        label: 'Collapse All Side Panels'
+        label: { value: 'Collapse All Side Panels', id: 'core.collapse.all.tabs' }
     };
     export const TOGGLE_BOTTOM_PANEL: Command = {
         id: 'core.toggle.bottom.panel',
         category: VIEW_CATEGORY,
-        label: 'Toggle Bottom Panel'
+        label: { value: 'Toggle Bottom Panel', id: 'core.toggle.bottom.panel' }
     };
     export const TOGGLE_MAXIMIZED: Command = {
         id: 'core.toggleMaximized',
         category: VIEW_CATEGORY,
-        label: 'Toggle Maximized'
+        label: { value: 'Toggle Maximized', id: 'core.toggleMaximized' }
     };
     export const OPEN_VIEW: Command = {
         id: 'core.openView',
         category: VIEW_CATEGORY,
-        label: 'Open View...'
+        label: { value: 'Open View...', id: 'vscode/viewQuickAccess' }
     };
 
     export const SAVE: Command = {
         id: 'core.save',
         category: FILE_CATEGORY,
-        label: 'Save',
+        label: { value: 'Save', id: 'vscode/fileCommands/save' }
     };
     export const SAVE_WITHOUT_FORMATTING: Command = {
         id: 'core.saveWithoutFormatting',
         category: FILE_CATEGORY,
-        label: 'Save without Formatting',
+        label: { value: 'Save without Formatting', id: 'vscode/fileCommands/saveWithoutFormatting' }
     };
     export const SAVE_ALL: Command = {
         id: 'core.saveAll',
         category: FILE_CATEGORY,
-        label: 'Save All',
+        label: { value: 'Save All', id: 'vscode/fileCommands/saveAll' }
     };
 
     export const AUTO_SAVE: Command = {
         id: 'textEditor.commands.autosave',
         category: FILE_CATEGORY,
-        label: 'Auto Save',
+        label: { value: 'Auto Save', id: 'vscode/fileActions.contribution/miAutoSave' }
     };
 
     export const ABOUT_COMMAND: Command = {
         id: 'core.about',
-        label: 'About'
+        label: { value: 'About', id: 'vscode/windowActions/about' }
     };
 
     export const OPEN_PREFERENCES: Command = {
         id: 'preferences:open',
         category: 'Settings',
-        label: 'Open Preferences',
+        label: { value: 'Open Preferences', id: 'vscode/preferences.contribution/preferences' }
     };
 
     export const SELECT_COLOR_THEME: Command = {
         id: 'workbench.action.selectTheme',
-        label: 'Color Theme',
+        label: { value: 'Color Theme', id: 'vscode/themes.contribution/selectTheme.label' },
         category: 'Preferences'
     };
     export const SELECT_ICON_THEME: Command = {
         id: 'workbench.action.selectIconTheme',
-        label: 'File Icon Theme',
+        label: { value: 'File Icon Theme', id: 'vscode/themes.contribution/selectIconTheme.label' },
         category: 'Preferences'
+    };
+
+    export const CONFIGURE_DISPLAY_LANGUAGE: Command = {
+        id: 'i18n.configureLanguage',
+        label: { value: 'Configure Display Language', id: 'i18n.configureLanguage' }
     };
 
 }
@@ -289,7 +295,8 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
         @inject(SelectionService) protected readonly selectionService: SelectionService,
         @inject(MessageService) protected readonly messageService: MessageService,
         @inject(OpenerService) protected readonly openerService: OpenerService,
-        @inject(AboutDialog) protected readonly aboutDialog: AboutDialog
+        @inject(AboutDialog) protected readonly aboutDialog: AboutDialog,
+        @inject(LocalizationProvider) protected readonly localizationProvider: LocalizationProvider
     ) { }
 
     @inject(ContextKeyService)
@@ -444,10 +451,10 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
     }
 
     registerMenus(registry: MenuModelRegistry): void {
-        registry.registerSubmenu(CommonMenus.FILE, 'File');
-        registry.registerSubmenu(CommonMenus.EDIT, 'Edit');
-        registry.registerSubmenu(CommonMenus.VIEW, 'View');
-        registry.registerSubmenu(CommonMenus.HELP, 'Help');
+        registry.registerSubmenu(CommonMenus.FILE, { value: 'File', id: 'vscode/menubarControl/mFile' });
+        registry.registerSubmenu(CommonMenus.EDIT, { value: 'Edit', id: 'vscode/menubarControl/mEdit' });
+        registry.registerSubmenu(CommonMenus.VIEW, { value: 'View', id: 'vscode/menubarControl/mView' });
+        registry.registerSubmenu(CommonMenus.HELP, { value: 'Help', id: 'vscode/menubarControl/mHelp' });
 
         registry.registerMenuAction(CommonMenus.FILE_SAVE, {
             commandId: CommonCommands.SAVE.id
@@ -774,6 +781,10 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
         commandRegistry.registerCommand(CommonCommands.SELECT_ICON_THEME, {
             execute: () => this.selectIconTheme()
         });
+
+        commandRegistry.registerCommand(CommonCommands.CONFIGURE_DISPLAY_LANGUAGE, {
+            execute: () => this.configureDisplayLanguage()
+        });
     }
 
     private findTabArea(event?: Event): ApplicationShell.Area | undefined {
@@ -985,6 +996,33 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
         } finally {
             this.shouldPreventClose = false;
         }
+    }
+
+    protected async configureDisplayLanguage(): Promise<void> {
+        const availableLanguages = await this.localizationProvider.getAvailableLanguages();
+        const items: QuickOpenItem[] = [];
+        for (const additionalLanguage of ['en', ...availableLanguages]) {
+            items.push(new QuickOpenItem({
+                label: additionalLanguage,
+                run: (mode: QuickOpenMode) => {
+                    if (mode !== QuickOpenMode.OPEN) {
+                        return false;
+                    }
+                    if (additionalLanguage !== locale) {
+                        window.localStorage.setItem(localeId, additionalLanguage);
+                        window.location.reload();
+                    }
+                    return true;
+                }
+            }));
+        }
+        this.quickOpenService.open({
+            onType: (_, accept) => accept(items)
+        }, {
+            placeholder: 'Select Display Language',
+            fuzzyMatchLabel: false,
+            selectIndex: () => items.findIndex(item => item.getLabel() === locale)
+        });
     }
 
     protected selectIconTheme(): void {

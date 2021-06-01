@@ -70,13 +70,13 @@ export namespace FileDownloadCommands {
     export const DOWNLOAD: Command = {
         id: 'file.download',
         category: 'File',
-        label: 'Download'
+        label: { value: 'Download', id: 'file.download' }
     };
 
     export const COPY_DOWNLOAD_LINK: Command = {
         id: 'file.copyDownloadLink',
         category: 'File',
-        label: 'Copy Download Link'
+        label: { value: 'Copy Download Link', id: 'file.copyDownloadLink' }
     };
 
 }

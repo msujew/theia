@@ -17,7 +17,7 @@
 import React = require('@theia/core/shared/react');
 import debounce = require('@theia/core/shared/lodash.debounce');
 import * as fuzzy from '@theia/core/shared/fuzzy';
-import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
+import { injectable, inject, postConstruct, optional } from '@theia/core/shared/inversify';
 import { Emitter, Event } from '@theia/core/lib/common/event';
 import { CommandRegistry, Command } from '@theia/core/lib/common/command';
 import { ReactWidget } from '@theia/core/lib/browser/widgets/react-widget';
@@ -26,6 +26,7 @@ import {
 } from '@theia/core/lib/browser';
 import { KeymapsService } from './keymaps-service';
 import { AlertMessage } from '@theia/core/lib/browser/widgets/alert-message';
+import { LocalizationInfo, LocalizationService } from '@theia/core/lib/common/i18n/localization';
 
 /**
  * Representation of a keybinding item for the view.
@@ -68,6 +69,9 @@ export class KeybindingWidget extends ReactWidget {
 
     @inject(KeymapsService)
     protected readonly keymapsService: KeymapsService;
+
+    @inject(LocalizationService) @optional()
+    protected readonly localizationService?: LocalizationService;
 
     static readonly ID = 'keybindings.view.widget';
     static readonly LABEL = 'Keyboard Shortcuts';
@@ -492,8 +496,10 @@ export class KeybindingWidget extends ReactWidget {
      */
     protected getCommandLabel(command: Command): string {
         if (command.label) {
+            const label = LocalizationInfo.localize(command.label, this.localizationService);
+            const category = command.category && LocalizationInfo.localize(command.category, this.localizationService);
             // Prefix the command label with the category if it exists, else return the simple label.
-            return command.category ? `${command.category}: ${command.label}` : command.label;
+            return category ? `${category}: ${label}` : label;
         }
         return command.id;
     }

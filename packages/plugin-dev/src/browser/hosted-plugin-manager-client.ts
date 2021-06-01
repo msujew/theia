@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
+import { injectable, inject, postConstruct, optional } from '@theia/core/shared/inversify';
 import URI from '@theia/core/lib/common/uri';
 import { Path } from '@theia/core/lib/common/path';
 import { MessageService, Command, Emitter, Event, UriSelection } from '@theia/core/lib/common';
@@ -28,6 +28,7 @@ import { DebugSessionManager } from '@theia/debug/lib/browser/debug-session-mana
 import { HostedPluginPreferences } from './hosted-plugin-preferences';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
+import { LocalizationInfo, LocalizationService } from '@theia/core/lib/common/i18n/localization';
 
 /**
  * Commands to control Hosted plugin instances.
@@ -120,6 +121,8 @@ export class HostedPluginManagerClient {
     protected readonly debugSessionManager: DebugSessionManager;
     @inject(HostedPluginPreferences)
     protected readonly hostedPluginPreferences: HostedPluginPreferences;
+    @inject(LocalizationService) @optional()
+    protected readonly localizationService?: LocalizationService;
 
     @postConstruct()
     protected async init(): Promise<void> {
@@ -270,7 +273,7 @@ export class HostedPluginManagerClient {
         const rootNode = DirNode.createRoot(workspaceFolder);
 
         const dialog = this.openFileDialogFactory({
-            title: HostedPluginCommands.SELECT_PATH.label!,
+            title: LocalizationInfo.localize(HostedPluginCommands.SELECT_PATH.label!, this.localizationService),
             openLabel: 'Select',
             canSelectFiles: false,
             canSelectFolders: true,

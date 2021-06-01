@@ -28,6 +28,7 @@ import { Deferred } from '../common/promise-util';
 import { environment } from '../common/index';
 import { AddressInfo } from 'net';
 import { ApplicationPackage } from '@theia/application-package';
+import { LocalizationRegistry } from './i18n/localization-contribution';
 
 export const BackendApplicationContribution = Symbol('BackendApplicationContribution');
 
@@ -141,6 +142,9 @@ export class BackendApplication {
     @inject(ApplicationPackage)
     protected readonly applicationPackage: ApplicationPackage;
 
+    @inject(LocalizationRegistry)
+    protected readonly localizationRegistry: LocalizationRegistry;
+
     private readonly _performanceObserver: PerformanceObserver;
 
     constructor(
@@ -200,6 +204,7 @@ export class BackendApplication {
                 }
             }
         }
+        await this.localizationRegistry.onStart();
     }
 
     @postConstruct()

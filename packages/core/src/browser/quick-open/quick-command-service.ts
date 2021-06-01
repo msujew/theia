@@ -24,6 +24,7 @@ import { QuickOpenContribution, QuickOpenHandlerRegistry, QuickOpenHandler } fro
 import { ContextKeyService } from '../context-key-service';
 import { CLEAR_COMMAND_HISTORY } from './quick-command-contribution';
 import { CorePreferences } from '../core-preferences';
+import { LocalizationInfo } from '../../common/i18n/localization';
 
 @injectable()
 export class QuickCommandService implements QuickOpenModel, QuickOpenHandler {
@@ -221,9 +222,21 @@ export class CommandQuickOpenItem extends QuickOpenGroupItem {
     }
 
     getLabel(): string {
-        return (this.command.category)
-            ? `${this.command.category}: ` + this.command.label!
-            : this.command.label!;
+        const label = LocalizationInfo.localize(this.command.label!);
+        const category = this.command.category && LocalizationInfo.localize(this.command.category);
+        return category ? `${category}: ` + label : label;
+    }
+
+    getDetail(): string | undefined {
+        const label = this.getLabel();
+        const defaultValue = LocalizationInfo.getDefault(this.command.label!);
+        const category = this.command.category && LocalizationInfo.getDefault(this.command.category);
+        const description = category ? `${category}: ` + defaultValue : defaultValue;
+        if (label !== description) {
+            return description;
+        } else {
+            return undefined;
+        }
     }
 
     isHidden(): boolean {

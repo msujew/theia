@@ -28,6 +28,7 @@ import { OS } from '@theia/core/lib/common/os';
 import { OpenFileDialogProps } from '@theia/filesystem/lib/browser/file-dialog';
 import { WorkspaceFrontendContribution } from './workspace-frontend-contribution';
 import { WorkspaceCommands } from './workspace-commands';
+import { LocalizationInfo } from '@theia/core/lib/common/i18n/localization';
 
 disableJSDOM();
 
@@ -35,7 +36,7 @@ describe('workspace-frontend-contribution', () => {
 
     describe('WorkspaceFrontendContribution', () => {
 
-        const title = WorkspaceCommands.OPEN_WORKSPACE.dialogLabel;
+        const title = LocalizationInfo.localize(WorkspaceCommands.OPEN_WORKSPACE.dialogLabel);
         const filters = WorkspaceFrontendContribution.DEFAULT_FILE_FILTER;
 
         before(() => disableJSDOM = enableJSDOM());

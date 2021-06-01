@@ -14,10 +14,11 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { injectable, inject, named } from 'inversify';
+import { injectable, inject, named, optional } from 'inversify';
 import { Event, Emitter, WaitUntilEvent } from './event';
 import { Disposable, DisposableCollection } from './disposable';
 import { ContributionProvider } from './contribution-provider';
+import { LocalizationInfo, LocalizationService } from './i18n/localization';
 
 /**
  * A command is a unique identifier of a function
@@ -32,7 +33,7 @@ export interface Command {
     /**
      * A label of this command.
      */
-    label?: string;
+    label?: string | LocalizationInfo;
     /**
      * An icon class of this command.
      */
@@ -40,7 +41,7 @@ export interface Command {
     /**
      * A category of this command.
      */
-    category?: string;
+    category?: string | LocalizationInfo;
 }
 
 export namespace Command {
@@ -53,8 +54,10 @@ export namespace Command {
     /** Comparator function for when sorting commands */
     export function compareCommands(a: Command, b: Command): number {
         if (a.label && b.label) {
-            const aCommand = (a.category ? `${a.category}: ${a.label}` : a.label).toLowerCase();
-            const bCommand = (b.category ? `${b.category}: ${b.label}` : b.label).toLowerCase();
+            const aLabel = LocalizationInfo.localize(a.label);
+            const bLabel = LocalizationInfo.localize(b.label);
+            const aCommand = (a.category ? `${LocalizationInfo.localize(a.category)}: ${aLabel}` : aLabel).toLowerCase();
+            const bCommand = (b.category ? `${LocalizationInfo.localize(b.category)}: ${bLabel}` : bLabel).toLowerCase();
             return (aCommand).localeCompare(bCommand);
         } else {
             return 0;
@@ -70,9 +73,9 @@ export namespace Command {
     export function equals(a: Command, b: Command): boolean {
         return (
             a.id === b.id &&
-            a.label === b.label &&
+            LocalizationInfo.equals(a.label, b.label) &&
             a.iconClass === b.iconClass &&
-            a.category === b.category
+            LocalizationInfo.equals(a.category, b.category)
         );
     }
 }
@@ -174,6 +177,9 @@ export class CommandRegistry implements CommandService {
     protected readonly onDidExecuteCommandEmitter = new Emitter<CommandEvent>();
     readonly onDidExecuteCommand = this.onDidExecuteCommandEmitter.event;
 
+    @inject(LocalizationService) @optional()
+    protected readonly localizationService?: LocalizationService;
+
     constructor(
         @inject(ContributionProvider) @named(CommandContribution)
         protected readonly contributionProvider: ContributionProvider<CommandContribution>
@@ -195,6 +201,12 @@ export class CommandRegistry implements CommandService {
         if (this._commands[command.id]) {
             console.warn(`A command ${command.id} is already registered.`);
             return Disposable.NULL;
+        }
+        if (LocalizationInfo.is(command.label)) {
+            LocalizationInfo.localize(command.label, this.localizationService);
+        }
+        if (LocalizationInfo.is(command.category)) {
+            LocalizationInfo.localize(command.category, this.localizationService);
         }
         const toDispose = new DisposableCollection(this.doRegisterCommand(command));
         if (handler) {

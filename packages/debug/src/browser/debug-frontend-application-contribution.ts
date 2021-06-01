@@ -15,7 +15,7 @@
  ********************************************************************************/
 
 import { AbstractViewContribution, ApplicationShell, KeybindingRegistry, Widget, CompositeTreeNode, LabelProvider } from '@theia/core/lib/browser';
-import { injectable, inject } from '@theia/core/shared/inversify';
+import { injectable, inject, optional } from '@theia/core/shared/inversify';
 import { ThemeService } from '@theia/core/lib/browser/theming';
 import { MenuModelRegistry, CommandRegistry, MAIN_MENU_BAR, Command, Emitter, Mutable } from '@theia/core/lib/common';
 import { DebugViewLocation } from '../common/debug-configuration';
@@ -51,6 +51,7 @@ import { ColorContribution } from '@theia/core/lib/browser/color-application-con
 import { ColorRegistry } from '@theia/core/lib/browser/color-registry';
 import { DebugFunctionBreakpoint } from './model/debug-function-breakpoint';
 import { DebugBreakpoint } from './model/debug-breakpoint';
+import { LocalizationInfo, LocalizationService } from '@theia/core/lib/common/i18n/localization';
 
 export namespace DebugMenus {
     export const DEBUG = [...MAIN_MENU_BAR, '6_debug'];
@@ -65,7 +66,7 @@ export namespace DebugMenus {
 
 export namespace DebugCommands {
 
-    const DEBUG_CATEGORY = 'Debug';
+    export const DEBUG_CATEGORY = { value: 'Debug', id: 'vscode/debugCommands/debug' };
 
     export const START: Command = {
         id: 'workbench.action.debug.start',
@@ -75,7 +76,7 @@ export namespace DebugCommands {
     };
     export const START_NO_DEBUG: Command = {
         id: 'workbench.action.debug.run',
-        label: 'Debug: Start Without Debugging'
+        label: { value: '{0}: Start Without Debugging', id: 'vscode/debugCommands/startWithoutDebugging', args: [DEBUG_CATEGORY] }
     };
     export const STOP: Command = {
         id: 'workbench.action.debug.stop',
@@ -420,6 +421,9 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
     @inject(EditorManager)
     protected readonly editorManager: EditorManager;
 
+    @inject(LocalizationService) @optional()
+    protected readonly localizationService?: LocalizationService;
+
     constructor() {
         super({
             widgetId: DebugWidget.ID,
@@ -482,9 +486,11 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
         super.registerMenus(menus);
         const registerMenuActions = (menuPath: string[], ...commands: Command[]) => {
             for (const [index, command] of commands.entries()) {
+                const label = command.label && LocalizationInfo.localize(command.label, this.localizationService);
+                const debug = LocalizationInfo.localize(DebugCommands.DEBUG_CATEGORY, this.localizationService) + ': ';
                 menus.registerMenuAction(menuPath, {
                     commandId: command.id,
-                    label: command.label && command.label.startsWith('Debug: ') && command.label.slice('Debug: '.length) || command.label,
+                    label: label && label.startsWith(debug) && label.slice(debug.length) || label,
                     icon: command.iconClass,
                     order: String.fromCharCode('a'.charCodeAt(0) + index)
                 });

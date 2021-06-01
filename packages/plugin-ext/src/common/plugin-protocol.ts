@@ -25,6 +25,7 @@ import { PreferenceSchema, PreferenceSchemaProperties } from '@theia/core/lib/co
 import { ProblemMatcherContribution, ProblemPatternContribution, TaskDefinition } from '@theia/task/lib/common';
 import { ColorDefinition } from '@theia/core/lib/browser/color-registry';
 import { ResourceLabelFormatter } from '@theia/core/lib/common/label-protocol';
+import { LocalizationInfo } from '@theia/core/lib/common/i18n/localization';
 
 export const hostedServicePath = '/services/hostedPlugin';
 
@@ -89,6 +90,20 @@ export interface PluginPackageContribution {
     problemPatterns?: PluginProblemPatternContribution[];
     jsonValidation?: PluginJsonValidationContribution[];
     resourceLabelFormatters?: ResourceLabelFormatter[];
+    localizations?: PluginPackageLocalization[];
+}
+
+export interface PluginPackageLocalization {
+    languageId: string;
+    languageName?: string;
+    localizedLanguageName?: string;
+    translations: PluginPackageTranslation[];
+    minimalTranslations?: { [key: string]: string };
+}
+
+export interface PluginPackageTranslation {
+    id: string;
+    path: string;
 }
 
 export interface PluginPackageCustomEditor {
@@ -526,6 +541,21 @@ export interface PluginContribution {
     problemMatchers?: ProblemMatcherContribution[];
     problemPatterns?: ProblemPatternContribution[];
     resourceLabelFormatters?: ResourceLabelFormatter[];
+    localizations?: Localization[];
+}
+
+export interface Localization {
+    languageId: string;
+    languageName?: string;
+    localizedLanguageName?: string;
+    translations: Translation[];
+    minimalTranslations?: { [key: string]: string };
+}
+
+export interface Translation {
+    id: string;
+    version: string;
+    contents: { [scope: string]: { [key: string]: string } }
 }
 
 export interface SnippetContribution {
@@ -673,8 +703,8 @@ export interface ViewWelcome {
 
 export interface PluginCommand {
     command: string;
-    title: string;
-    category?: string;
+    title: string | LocalizationInfo;
+    category?: string | LocalizationInfo;
     iconUrl?: IconUrl;
     themeIcon?: string;
     enablement?: string;
