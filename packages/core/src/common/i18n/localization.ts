@@ -25,7 +25,13 @@ export interface Localization {
     languageId: string;
     languageName?: string;
     localizedLanguageName?: string;
-    translations: { [key: string]: string };
+    translations: Translation[];
+}
+
+export interface Translation {
+    id: string;
+    plugin: string;
+    contents: Record<string, Record<string, string>>
 }
 
 export interface LocalizationInfo {
@@ -123,11 +129,28 @@ export class LocalizationService {
 
     localize(key: string, defaultValue: string, ...args: string[]): string {
         let value = defaultValue;
-        const translation = this.localization.translations[key];
-        if (translation) {
-            // vscode's localizations often contain additional '&&' symbols, which we simply ignore
-            value = translation.replaceAll('&&', '');
+        const { plugin, bundle, id } = this.splitKey(key);
+
+        const translation = this.localization.translations.find(e => e.id === plugin);
+        if (translation && bundle in translation.contents && id in translation.contents[bundle]) {
+            const translated = translation.contents[bundle][id];
+            if (translated) {
+                // vscode's localizations often contain additional '&&' symbols, which we simply ignore
+                value = translated.replaceAll('&&', '');
+            }
         }
         return LocalizationInfo.format(value, args);
+    }
+
+    protected splitKey(key: string): { plugin: string, bundle: string, id: string } {
+        const firstIndex = key.indexOf('/');
+        const lastIndex = key.lastIndexOf('/');
+        if (firstIndex === lastIndex) {
+            return { plugin: '', bundle: '', id: key };
+        }
+        const plugin = key.substring(0, firstIndex);
+        const bundle = key.substring(firstIndex + 1, lastIndex);
+        const id = key.substring(lastIndex + 1);
+        return { plugin, bundle, id };
     }
 }

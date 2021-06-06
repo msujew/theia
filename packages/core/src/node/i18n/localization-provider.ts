@@ -25,6 +25,7 @@ export interface LocalizationProvider {
     getAvailableLanguages(): string[]
     addLocalizations(...localizations: Localization[]): void
     loadLocalization(languageId: string): Localization
+    removeLocalizations(pluginId: string): void
 }
 
 @injectable()
@@ -38,7 +39,7 @@ export class LocalizationProviderImpl implements LocalizationProvider {
             if (!this.localizations.has(localization.languageId)) {
                 this.localizations.set(localization.languageId, localization);
             } else {
-                Object.assign(this.localizations.get(localization.languageId)!.translations, localization.translations);
+                this.localizations.get(localization.languageId)!.translations.push(...localization.translations);
             }
         }
     }
@@ -59,8 +60,13 @@ export class LocalizationProviderImpl implements LocalizationProvider {
         return this.localizations.get(languageId) ||
         {
             languageId,
-            translations: {}
+            translations: []
         };
     }
 
+    removeLocalizations(pluginId: string): void {
+        for (const localization of this.localizations.values()) {
+            localization.translations = localization.translations.filter(e => e.plugin !== pluginId);
+        }
+    }
 }

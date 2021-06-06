@@ -18,7 +18,7 @@ import * as fs from 'fs-extra';
 import * as path from 'path';
 import { inject, injectable, named } from 'inversify';
 import { ContributionProvider } from '../../common';
-import { Localization } from '../../common/i18n/localization';
+import { Localization, Translation } from '../../common/i18n/localization';
 import { LocalizationProvider } from './localization-provider';
 
 export const LocalizationContribution = Symbol('LocalizationContribution');
@@ -54,31 +54,28 @@ export class LocalizationRegistry {
             throw new Error('Could not determine locale from path.');
         }
         const translationJson = await fs.readFile(localizationPath, { encoding: 'utf8' });
-        const translations = this.flattenTranslations(JSON.parse(translationJson));
+        const translation = this.flattenTranslation(JSON.parse(translationJson));
         const localization: Localization = {
             languageId: locale,
-            translations
+            translations: [translation]
         };
         this.registerLocalization(localization);
     }
 
-    protected flattenTranslations(localization: unknown): Record<string, string> {
+    protected flattenTranslation(localization: unknown): Translation {
+        const translation: Translation = {
+            id: '',
+            plugin: '',
+            contents: { '': {} }
+        };
         if (localization && typeof localization === 'object') {
-            const record: Record<string, string> = {};
             for (const [key, value] of Object.entries(localization)) {
                 if (typeof value === 'string') {
-                    record[key] = value;
-                } else if (value && typeof value === 'object') {
-                    const flattened = this.flattenTranslations(value);
-                    for (const [flatKey, flatValue] of Object.entries(flattened)) {
-                        record[`${key}/${flatKey}`] = flatValue;
-                    }
+                    translation.contents[''][key] = value;
                 }
             }
-            return record;
-        } else {
-            return {};
         }
+        return translation;
     }
 
     protected identifyLocale(localizationPath: string): string | undefined {

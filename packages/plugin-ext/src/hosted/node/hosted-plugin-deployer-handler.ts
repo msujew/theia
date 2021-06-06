@@ -135,7 +135,7 @@ export class HostedPluginDeployerHandler implements PluginDeployerHandler {
             const deployed: DeployedPlugin = { metadata, type };
             deployed.contributes = this.reader.readContribution(manifest);
             if (deployed.contributes?.localizations) {
-                this.localizationProvider.addLocalizations(...buildTheiaLocalizations(deployed.contributes.localizations));
+                this.localizationProvider.addLocalizations(...buildTheiaLocalizations(deployed.metadata.model.id, deployed.contributes.localizations));
             }
             deployedPlugins.set(metadata.model.id, deployed);
             this.logger.info(`Deploying ${entryPoint} plugin "${metadata.model.name}@${metadata.model.version}" from "${metadata.model.entryPoint[entryPoint] || pluginPath}"`);
@@ -145,6 +145,7 @@ export class HostedPluginDeployerHandler implements PluginDeployerHandler {
     }
 
     async undeployPlugin(pluginId: string): Promise<boolean> {
+        this.localizationProvider.removeLocalizations(pluginId);
         this.deployedBackendPlugins.delete(pluginId);
         this.deployedFrontendPlugins.delete(pluginId);
         const deployedLocations = this.deployedLocations.get(pluginId);
@@ -163,32 +164,14 @@ export class HostedPluginDeployerHandler implements PluginDeployerHandler {
     }
 }
 
-function buildTheiaLocalizations(localizations: Localization[]): TheiaLocalization[] {
+function buildTheiaLocalizations(pluginId: string, localizations: Localization[]): TheiaLocalization[] {
     const theiaLocalizations: TheiaLocalization[] = [];
     for (const localization of localizations) {
-        const theiaLocalization: TheiaLocalization = {
-            languageId: localization.languageId,
-            languageName: localization.languageName,
-            localizedLanguageName: localization.localizedLanguageName,
-            translations: {}
-        };
-        for (const translation of localization.translations) {
-            for (const [scope, value] of Object.entries(translation.contents)) {
-                for (const [key, item] of Object.entries(value)) {
-                    const translationKey = buildTheiaTranslationKey(translation.id, scope, key);
-                    theiaLocalization.translations[translationKey] = item;
-                }
-            }
-        }
+        const theiaLocalization = localization as unknown as TheiaLocalization;
+        theiaLocalization.translations.forEach(e => {
+            e.plugin = pluginId;
+        });
         theiaLocalizations.push(theiaLocalization);
     }
     return theiaLocalizations;
-}
-
-function buildTheiaTranslationKey(pluginId: string, scope: string, key: string): string {
-    const scopeSlashIndex = scope.lastIndexOf('/');
-    if (scopeSlashIndex >= 0) {
-        scope = scope.substring(scopeSlashIndex + 1);
-    }
-    return `${pluginId}/${scope}/${key}`;
 }

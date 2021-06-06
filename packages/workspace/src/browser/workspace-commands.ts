@@ -53,14 +53,14 @@ export namespace WorkspaceCommands {
     export const OPEN: Command & { dialogLabel: string | LocalizationInfo } = {
         id: 'workspace:open',
         category: FILE_CATEGORY,
-        label: { value: 'Open...', id: 'vscode/workspaceActions/openFileFolder' },
-        dialogLabel: { value: 'Open', id: 'vscode/dialogMainService/open' },
+        label: { value: 'Open...', id: 'vscode/vs/workbench/browser/actions/workspaceActions/openFileFolder' },
+        dialogLabel: { value: 'Open', id: 'vscode/vs/platform/dialogs/electron-main/dialogMainService/open' },
     };
     // No `label`. Otherwise, it shows up in the `Command Palette`.
     export const OPEN_FILE: Command & { dialogLabel: string | LocalizationInfo } = {
         id: 'workspace:openFile',
         category: FILE_CATEGORY,
-        dialogLabel: { value: 'Open File', id: 'vscode/fileActions.contribution/openFile' }
+        dialogLabel: { value: 'Open File', id: 'vscode/vs/workbench/contrib/files/browser/fileActions.contribution/openFile' }
     };
     export const OPEN_FOLDER: Command & { dialogLabel: string | LocalizationInfo } = {
         id: 'workspace:openFolder',
@@ -85,7 +85,7 @@ export namespace WorkspaceCommands {
     export const NEW_FILE: Command = {
         id: 'file.newFile',
         category: FILE_CATEGORY,
-        label: { value: 'New File', id: 'vscode/fileActions.contribution/newFile' }
+        label: { value: 'New File', id: 'vscode/vs/workbench/contrib/files/browser/fileActions.contribution/newFile' }
     };
     export const NEW_FOLDER: Command = {
         id: 'file.newFolder',
