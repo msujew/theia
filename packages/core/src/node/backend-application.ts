@@ -29,6 +29,7 @@ import { environment } from '../common/index';
 import { AddressInfo } from 'net';
 import { ApplicationPackage } from '@theia/application-package';
 import { LocalizationRegistry } from './i18n/localization-contribution';
+import { LocalizationProvider } from './i18n/localization-provider';
 
 export const BackendApplicationContribution = Symbol('BackendApplicationContribution');
 
@@ -145,6 +146,9 @@ export class BackendApplication {
     @inject(LocalizationRegistry)
     protected readonly localizationRegistry: LocalizationRegistry;
 
+    @inject(LocalizationProvider)
+    protected readonly localizationProvider: LocalizationProvider;
+
     private readonly _performanceObserver: PerformanceObserver;
 
     constructor(
@@ -205,6 +209,14 @@ export class BackendApplication {
             }
         }
         await this.localizationRegistry.onStart();
+        this.use((req, res, next) => {
+            if (req.path.startsWith('/i18n/')) {
+                const locale = req.path.substring('/i18n/'.length);
+                const localization = this.localizationProvider.loadLocalization(locale);
+                res.send([localization]);
+            }
+            next();
+        });
     }
 
     @postConstruct()

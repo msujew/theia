@@ -38,7 +38,7 @@ export class LocalizationProviderImpl implements LocalizationProvider {
             if (!this.localizations.has(localization.languageId)) {
                 this.localizations.set(localization.languageId, localization);
             } else {
-                Object.assign(this.localizations.get(localization.languageId)!.translations, localization.translations);
+                this.localizations.get(localization.languageId)!.translations.push(...localization.translations);
             }
         }
     }
@@ -59,7 +59,7 @@ export class LocalizationProviderImpl implements LocalizationProvider {
         return this.localizations.get(languageId) ||
         {
             languageId,
-            translations: {}
+            translations: []
         };
     }
 

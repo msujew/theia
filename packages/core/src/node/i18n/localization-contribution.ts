@@ -54,10 +54,14 @@ export class LocalizationRegistry {
             throw new Error('Could not determine locale from path.');
         }
         const translationJson = await fs.readFile(localizationPath, { encoding: 'utf8' });
-        const translations = JSON.parse(translationJson);
+        const translations = JSON.parse(translationJson) as Record<string, string>;
         const localization: Localization = {
             languageId: locale,
-            translations
+            translations: Object.entries(translations).map(([key, value]) => ({
+                id: '',
+                version: '',
+                contents: { '': { [key]: value } }
+            }))
         };
         this.registerLocalization(localization);
     }

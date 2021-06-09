@@ -14,6 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
+// import { nls } from '@theia/core/lib/browser/nls';
 import { localizationId, LocalizationService } from '@theia/core/lib/common/i18n/localization-service';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */

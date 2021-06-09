@@ -484,7 +484,7 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
             for (const [index, command] of commands.entries()) {
                 menus.registerMenuAction(menuPath, {
                     commandId: command.id,
-                    label: command.label && command.label.startsWith('Debug: ') && command.label.slice('Debug: '.length) || command.label,
+                    label: command.label,
                     icon: command.iconClass,
                     order: String.fromCharCode('a'.charCodeAt(0) + index)
                 });

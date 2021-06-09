@@ -24,7 +24,13 @@ export interface Localization {
     languageId: string;
     languageName?: string;
     localizedLanguageName?: string;
-    translations: { [key: string]: string };
+    translations: Translation[];
+}
+
+export interface Translation {
+    id: string;
+    version: string;
+    contents: { [bundle: string]: { [key: string]: string } }
 }
 
 export interface LocalizationInfo {
@@ -38,30 +44,12 @@ export namespace LocalizationInfo {
         if (typeof label === 'string') {
             return label;
         } else {
-            let content = service ? service.localize(label.id, label.value) : label.value;
+            const content = service ? service.localize(label.id, label.value) : label.value;
             if (label.args) {
-                content = format(content, ...label.args.map(arg => localize(arg, service)));
+                // content = format(content, ...label.args.map(arg => localize(arg, service)));
             }
             return content;
         }
-    }
-
-    export function format(message: string, ...args: string[]): string {
-        let result = message;
-        if (args.length > 0) {
-            result = message.replace(/\{(\d+)\}/g, (match, rest) => {
-                const index = rest[0];
-                const arg = args[index];
-                let replacement = match;
-                if (typeof arg === 'string') {
-                    replacement = arg;
-                } else if (typeof arg === 'number' || typeof arg === 'boolean' || !arg) {
-                    replacement = String(arg);
-                }
-                return replacement;
-            });
-        }
-        return result;
     }
 }
 
@@ -89,11 +77,12 @@ export class LocalizationService {
     }
 
     localize(key: string, defaultValue: string, ...args: string[]): string {
-        let value = defaultValue;
-        const translation = this.localization.translations[key];
-        if (translation) {
-            value = translation.replaceAll('&&', '');
-        }
-        return LocalizationInfo.format(value, ...args);
+        // let value = defaultValue;
+        // const translation = this.localization.translations[key];
+        // if (translation) {
+        //     value = translation.replaceAll('&&', '');
+        // }
+        // return LocalizationInfo.format(value, ...args);
+        return defaultValue;
     }
 }

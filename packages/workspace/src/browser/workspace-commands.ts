@@ -38,6 +38,7 @@ import { Emitter, Event } from '@theia/core/lib/common';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { FileStat } from '@theia/filesystem/lib/common/files';
 import { LocalizationInfo, LocalizationService } from '@theia/core/lib/common/i18n/localization-service';
+import { nls } from '@theia/core/lib/browser/nls';
 
 const validFilename: (arg: string) => boolean = require('valid-filename');
 
@@ -53,8 +54,8 @@ export namespace WorkspaceCommands {
     export const OPEN: Command & { dialogLabel: string | LocalizationInfo } = {
         id: 'workspace:open',
         category: FILE_CATEGORY,
-        label: { value: 'Open...', id: 'vscode/workspaceActions/openFileFolder' },
-        dialogLabel: { value: 'Open', id: 'vscode/dialogMainService/open' },
+        label: nls.localize('openFileFolder', 'Open...'),
+        dialogLabel: nls.localize({ key: 'openFileFolder', bundle: 'dialogMainService' }, 'Open'),
     };
     // No `label`. Otherwise, it shows up in the `Command Palette`.
     export const OPEN_FILE: Command & { dialogLabel: string | LocalizationInfo } = {

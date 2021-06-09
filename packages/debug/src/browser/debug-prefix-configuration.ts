@@ -168,7 +168,7 @@ export class DebugPrefixConfiguration implements CommandContribution, CommandHan
         this.statusBar.setElement(this.statusBarId, {
             alignment: StatusBarAlignment.LEFT,
             text: text.length ? `${icon} ${text}` : icon,
-            tooltip: this.command.label,
+            tooltip: 'this.command.label',
             command: this.command.id,
         });
     }

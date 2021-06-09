@@ -26,8 +26,10 @@ import { preventNavigation, parseCssTime, animationFrame } from './browser';
 import { CorePreferences } from './core-preferences';
 import { WindowService } from './window/window-service';
 import { localizationId, LocalizationService } from '../common/i18n/localization-service';
+import { loadTranslations } from './nls';
 
 LocalizationService.languageId = window.localStorage.getItem(localizationId) || 'en';
+loadTranslations();
 
 /**
  * Clients can implement to get a callback for contributing widgets to a shell on start.
