@@ -44,7 +44,8 @@ export class DebugThreadsSource extends TreeSource {
         if (this.model.sessionCount === 1 && this.model.session && this.model.session.threadCount) {
             return this.model.session.threads;
         }
-        return this.model.sessions;
+        const sessions = [...this.model.sessions].filter(e => !e.parentSession);
+        return sessions.values();
     }
 
 }

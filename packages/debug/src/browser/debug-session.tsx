@@ -62,6 +62,8 @@ export class DebugSession implements CompositeTreeElement {
         this.onDidChangeBreakpointsEmitter.fire(uri);
     }
 
+    protected readonly childSessions = new Map<string, DebugSession>();
+
     protected readonly toDispose = new DisposableCollection();
 
     constructor(
@@ -76,6 +78,12 @@ export class DebugSession implements CompositeTreeElement {
         protected readonly messages: MessageClient,
         protected readonly fileService: FileService) {
         this.connection.onRequest('runInTerminal', (request: DebugProtocol.RunInTerminalRequest) => this.runInTerminal(request));
+        if (parentSession) {
+            parentSession.childSessions.set(id, this);
+            this.toDispose.push(Disposable.create(() => {
+                this.parentSession?.childSessions?.delete(id);
+            }));
+        }
         this.toDispose.pushAll([
             this.onDidChangeEmitter,
             this.onDidChangeBreakpointsEmitter,
@@ -738,8 +746,11 @@ export class DebugSession implements CompositeTreeElement {
         </div>;
     }
 
-    getElements(): IterableIterator<DebugThread> {
-        return this.threads;
+    getElements(): IterableIterator<DebugThread | DebugSession> {
+        const items = [];
+        items.push(...this.threads);
+        items.push(...this.childSessions.values());
+        return items.values();
     }
 
     protected async handleContinued({ body: { allThreadsContinued, threadId } }: DebugProtocol.ContinuedEvent): Promise<void> {
