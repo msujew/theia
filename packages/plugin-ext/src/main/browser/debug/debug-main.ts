@@ -32,7 +32,7 @@ import { DebugSourceBreakpoint } from '@theia/debug/lib/browser/model/debug-sour
 import { URI as Uri } from '@theia/core/shared/vscode-uri';
 import { DebugConsoleSession } from '@theia/debug/lib/browser/console/debug-console-session';
 import { SourceBreakpoint, FunctionBreakpoint } from '@theia/debug/lib/browser/breakpoint/breakpoint-marker';
-import { DebugConfiguration } from '@theia/debug/lib/common/debug-configuration';
+import { DebugConfiguration, DebugSessionOptions } from '@theia/debug/lib/common/debug-configuration';
 import { ConnectionMainImpl } from '../connection-main';
 import { DebuggerDescription } from '@theia/debug/lib/common/debug-service';
 import { DebugProtocol } from 'vscode-debugprotocol';
@@ -245,13 +245,13 @@ export class DebugMainImpl implements DebugMain, Disposable {
         throw new Error(`Debug session '${sessionId}' not found`);
     }
 
-    async $startDebugging(folder: WorkspaceFolder | undefined, nameOrConfiguration: string | DebugConfiguration): Promise<boolean> {
+    async $startDebugging(folder: WorkspaceFolder | undefined, nameOrConfiguration: string | DebugConfiguration, options: DebugSessionOptions): Promise<boolean> {
         let configuration: DebugConfiguration | undefined;
 
         if (typeof nameOrConfiguration === 'string') {
-            for (const options of this.configurationManager.all) {
-                if (options.configuration.name === nameOrConfiguration) {
-                    configuration = options.configuration;
+            for (const configOptions of this.configurationManager.all) {
+                if (configOptions.configuration.name === nameOrConfiguration) {
+                    configuration = configOptions.configuration;
                 }
             }
         } else {
@@ -262,6 +262,8 @@ export class DebugMainImpl implements DebugMain, Disposable {
             console.error(`There is no debug configuration for ${nameOrConfiguration}`);
             return false;
         }
+
+        Object.assign(configuration, options);
 
         const session = await this.sessionManager.start({
             configuration,

@@ -67,6 +67,7 @@ export class DebugSession implements CompositeTreeElement {
     constructor(
         readonly id: string,
         readonly options: DebugSessionOptions,
+        readonly parentSession: DebugSession | undefined,
         protected readonly connection: DebugSessionConnection,
         protected readonly terminalServer: TerminalService,
         protected readonly editorManager: EditorManager,
