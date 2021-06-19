@@ -15,17 +15,15 @@
  ********************************************************************************/
 
 import throttle = require('@theia/core/shared/lodash.throttle');
-import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
+import { postConstruct } from '@theia/core/shared/inversify';
 import { DebugProtocol } from 'vscode-debugprotocol/lib/debugProtocol';
 import { ConsoleSession, ConsoleItem } from '@theia/console/lib/browser/console-session';
 import { AnsiConsoleItem } from '@theia/console/lib/browser/ansi-console-item';
 import { DebugSession } from '../debug-session';
-import { DebugSessionManager } from '../debug-session-manager';
 import URI from '@theia/core/lib/common/uri';
 import { ExpressionContainer, ExpressionItem } from './debug-console-items';
 import { Severity } from '@theia/core/lib/common/severity';
 
-@injectable()
 export class DebugConsoleSession extends ConsoleSession {
 
     static uri = new URI().withScheme('debugconsole');
@@ -36,19 +34,24 @@ export class DebugConsoleSession extends ConsoleSession {
     // content buffer for [append](#append) method
     protected uncompletedItemContent: string | undefined;
 
-    @inject(DebugSessionManager)
-    protected readonly manager: DebugSessionManager;
-
     protected readonly completionKinds = new Map<DebugProtocol.CompletionItemType | undefined, monaco.languages.CompletionItemKind>();
+
+    constructor(readonly session: DebugSession | undefined) {
+        super();
+        this.init();
+        if (session) {
+            session.on('output', event => this.logOutput(session, event));
+        }
+    }
 
     @postConstruct()
     init(): void {
-        this.toDispose.push(this.manager.onDidCreateDebugSession(session => {
-            if (this.manager.sessions.length === 1) {
-                this.clear();
-            }
-            session.on('output', event => this.logOutput(session, event));
-        }));
+        // this.toDispose.push(this.manager.onDidCreateDebugSession(session => {
+        //     if (this.manager.sessions.length === 1) {
+        //         this.clear();
+        //     }
+        //     session.on('output', event => this.logOutput(session, event));
+        // }));
         this.completionKinds.set('method', monaco.languages.CompletionItemKind.Method);
         this.completionKinds.set('function', monaco.languages.CompletionItemKind.Function);
         this.completionKinds.set('constructor', monaco.languages.CompletionItemKind.Constructor);
@@ -82,14 +85,13 @@ export class DebugConsoleSession extends ConsoleSession {
     }
 
     protected async completions(model: monaco.editor.ITextModel, position: monaco.Position): Promise<monaco.languages.CompletionList | undefined> {
-        const session = this.manager.currentSession;
-        if (session && session.capabilities.supportsCompletionsRequest) {
+        if (this.session && this.session.capabilities.supportsCompletionsRequest) {
             const column = position.column;
             const lineNumber = position.lineNumber;
             const word = model.getWordAtPosition({ column, lineNumber });
             const overwriteBefore = word ? word.word.length : 0;
             const text = model.getValue();
-            const items = await session.completions(text, column, lineNumber);
+            const items = await this.session.completions(text, column, lineNumber);
             const suggestions = items.map(item => this.asCompletionItem(text, position, overwriteBefore, item));
             return { suggestions };
         }
@@ -108,7 +110,7 @@ export class DebugConsoleSession extends ConsoleSession {
     }
 
     async execute(value: string): Promise<void> {
-        const expression = new ExpressionItem(value, () => this.manager.currentSession);
+        const expression = new ExpressionItem(value, () => this.session);
         this.items.push(expression);
         await expression.evaluate();
         this.fireDidChange();

@@ -15,14 +15,18 @@
  ********************************************************************************/
 
 import { ConsoleOptions, ConsoleWidget } from '@theia/console/lib/browser/console-widget';
-import { AbstractViewContribution, bindViewContribution, Widget, WidgetFactory } from '@theia/core/lib/browser';
+import { AbstractViewContribution, bindViewContribution, open, OpenerOptions, OpenerService, OpenHandler, Widget, WidgetFactory, WidgetManager } from '@theia/core/lib/browser';
 import { ContextKey, ContextKeyService } from '@theia/core/lib/browser/context-key-service';
 import { TabBarToolbarContribution, TabBarToolbarRegistry } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
+import { MaybePromise } from '@theia/core/lib/common';
 import { Command, CommandRegistry } from '@theia/core/lib/common/command';
 import { Severity } from '@theia/core/lib/common/severity';
-import { inject, injectable, interfaces } from '@theia/core/shared/inversify';
+import URI from '@theia/core/lib/common/uri';
+import { inject, injectable, interfaces, postConstruct } from '@theia/core/shared/inversify';
 import * as React from '@theia/core/shared/react';
+import { DebugSessionManager } from '../debug-session-manager';
 import { DebugConsoleSession } from './debug-console-session';
+import { DebugConsoleSessionUri } from './debug-console-session-uri';
 
 export type InDebugReplContextKey = ContextKey<boolean>;
 export const InDebugReplContextKey = Symbol('inDebugReplContextKey');
@@ -38,10 +42,18 @@ export namespace DebugConsoleCommands {
 }
 
 @injectable()
-export class DebugConsoleContribution extends AbstractViewContribution<ConsoleWidget> implements TabBarToolbarContribution {
+export class DebugConsoleContribution extends AbstractViewContribution<ConsoleWidget> implements TabBarToolbarContribution, OpenHandler {
 
-    @inject(DebugConsoleSession)
-    protected debugConsoleSession: DebugConsoleSession;
+    protected sessions: DebugConsoleSession[] = [];
+
+    @inject(WidgetManager)
+    protected readonly widgetManager: WidgetManager;
+
+    @inject(DebugSessionManager)
+    protected readonly debugSessionManager: DebugSessionManager;
+
+    @inject(OpenerService)
+    protected readonly openerService: OpenerService;
 
     constructor() {
         super({
@@ -53,6 +65,35 @@ export class DebugConsoleContribution extends AbstractViewContribution<ConsoleWi
             toggleCommandId: 'debug:console:toggle',
             toggleKeybinding: 'ctrlcmd+shift+y'
         });
+    }
+    readonly id = `${DebugConsoleContribution.options.id}-handler`;
+    label?: string | undefined;
+    iconClass?: string | undefined;
+
+    @postConstruct()
+    protected init(): void {
+        this.debugSessionManager.onDidCreateDebugSession(session => {
+            const consoleSession = new DebugConsoleSession(session);
+            const length = this.sessions.push(consoleSession);
+            if (length === 1) {
+                this.open(DebugConsoleSessionUri.create(session.label));
+            }
+        });
+        this.debugSessionManager.onDidDestroyDebugSession(session => {
+            this.sessions = this.sessions.filter(e => e.session !== session);
+        });
+    }
+
+    canHandle(uri: URI): MaybePromise<number> {
+        return DebugConsoleSessionUri.is(uri) ? 200 : 0;
+    }
+
+    async open(uri: URI, options?: OpenerOptions): Promise<ConsoleWidget> {
+        if (!DebugConsoleSessionUri.is(uri)) {
+            throw new Error(`Expected '${DebugConsoleSessionUri.SCHEME}' URI scheme. Got: ${uri} instead.`);
+        }
+        const widget = await this.openView(options);
+        return widget;
     }
 
     registerCommands(commands: CommandRegistry): void {
@@ -71,7 +112,14 @@ export class DebugConsoleContribution extends AbstractViewContribution<ConsoleWi
             id: 'debug-console-severity',
             render: widget => this.renderSeveritySelector(widget),
             isVisible: widget => this.withWidget(widget, () => true),
-            onDidChange: this.debugConsoleSession.onSelectionChange
+            // onDidChange: (listener, thisArgs, disposables) => this.activeConsoleSession?.onSelectionChange(listener, thisArgs, disposables)
+        });
+
+        toolbarRegistry.registerItem({
+            id: 'debug-console-selector',
+            render: widget => this.renderDebugConsoleSelector(widget),
+            isVisible: widget => this.withWidget(widget, () => this.sessions.length > 1),
+            // onDidChange: this.onSelectionChange
         });
 
         toolbarRegistry.registerItem({
@@ -105,7 +153,9 @@ export class DebugConsoleContribution extends AbstractViewContribution<ConsoleWi
             inputFocusContextKey
         });
         const widget = child.get(ConsoleWidget);
-        widget.session = child.get(DebugConsoleSession);
+        // The dummy session has no underlying debug session
+        const session = new DebugConsoleSession(undefined);
+        widget.session = session;
         return widget;
     }
 
@@ -113,12 +163,8 @@ export class DebugConsoleContribution extends AbstractViewContribution<ConsoleWi
         bind(InDebugReplContextKey).toDynamicValue(({ container }) =>
             container.get(ContextKeyService).createKey('inDebugRepl', false)
         ).inSingletonScope();
-        bind(DebugConsoleSession).toSelf().inSingletonScope();
-        bindViewContribution(bind, DebugConsoleContribution).onActivation((context, _) => {
-            // eagerly initialize the debug console session
-            context.container.get(DebugConsoleSession);
-            return _;
-        });
+        bindViewContribution(bind, DebugConsoleContribution);
+        bind(OpenHandler).to(DebugConsoleContribution).inSingletonScope();
         bind(TabBarToolbarContribution).toService(DebugConsoleContribution);
         bind(WidgetFactory).toDynamicValue(({ container }) => ({
             id: DebugConsoleContribution.options.id,
@@ -129,21 +175,44 @@ export class DebugConsoleContribution extends AbstractViewContribution<ConsoleWi
     protected renderSeveritySelector(widget: Widget | undefined): React.ReactNode {
         const severityElements: React.ReactNode[] = [];
         Severity.toArray().forEach(s => severityElements.push(<option value={s} key={s}>{s}</option>));
-        const selectedValue = Severity.toString(this.debugConsoleSession.severity || Severity.Ignore);
+        // const selectedValue = Severity.toString(this.activeConsoleSession?.severity || Severity.Ignore);
 
         return <select
             className='theia-select'
             id={'debugConsoleSeverity'}
             key={'debugConsoleSeverity'}
-            value={selectedValue}
+            value={undefined}
             onChange={this.changeSeverity}
         >
             {severityElements}
         </select>;
     }
 
+    protected renderDebugConsoleSelector(widget: Widget | undefined): React.ReactNode {
+        const availableConsoles: React.ReactNode[] = [];
+        this.sessions.forEach(e => {
+            const uriString = DebugConsoleSessionUri.create(e.session!.label).toString();
+            availableConsoles.push(<option value={uriString} key={uriString}>{e.session!.label}</option>);
+        });
+        return <select
+            className='theia-select'
+            id='debugConsoleSelector'
+            key='debugConsoleSelector'
+            value={undefined}
+            onChange={this.changeDebugConsole}
+        >
+            {availableConsoles}
+        </select>;
+    }
+
+    protected changeDebugConsole = (event: React.ChangeEvent<HTMLSelectElement>) => {
+        open(this.openerService, DebugConsoleSessionUri.create(event.target.value));
+    };
+
     protected changeSeverity = (event: React.ChangeEvent<HTMLSelectElement>) => {
-        this.debugConsoleSession.severity = Severity.fromValue(event.target.value);
+        // if (this.activeConsoleSession) {
+        //     this.activeConsoleSession.severity = Severity.fromValue(event.target.value);
+        // }
     };
 
     protected withWidget<T>(widget: Widget | undefined = this.tryGetWidget(), fn: (widget: ConsoleWidget) => T): T | false {

@@ -78,7 +78,7 @@ export class DebugMainImpl implements DebugMain, Disposable {
         this.labelProvider = container.get(LabelProvider);
         this.editorManager = container.get(EditorManager);
         this.breakpointsManager = container.get(BreakpointManager);
-        this.debugConsoleSession = container.get(DebugConsoleSession);
+        this.debugConsoleSession = new DebugConsoleSession(undefined);
         this.configurationManager = container.get(DebugConfigurationManager);
         this.terminalService = container.get(TerminalService);
         this.messages = container.get(MessageClient);
