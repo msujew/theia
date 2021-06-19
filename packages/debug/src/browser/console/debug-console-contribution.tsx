@@ -14,19 +14,18 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
+import { ConsoleSession } from '@theia/console/lib/browser/console-session';
 import { ConsoleOptions, ConsoleWidget } from '@theia/console/lib/browser/console-widget';
-import { AbstractViewContribution, bindViewContribution, open, OpenerOptions, OpenerService, OpenHandler, Widget, WidgetFactory, WidgetManager } from '@theia/core/lib/browser';
+import { AbstractViewContribution, bindViewContribution, Widget, WidgetFactory, WidgetManager } from '@theia/core/lib/browser';
 import { ContextKey, ContextKeyService } from '@theia/core/lib/browser/context-key-service';
 import { TabBarToolbarContribution, TabBarToolbarRegistry } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
-import { MaybePromise } from '@theia/core/lib/common';
 import { Command, CommandRegistry } from '@theia/core/lib/common/command';
 import { Severity } from '@theia/core/lib/common/severity';
-import URI from '@theia/core/lib/common/uri';
-import { inject, injectable, interfaces, postConstruct } from '@theia/core/shared/inversify';
+import { inject, injectable, interfaces } from '@theia/core/shared/inversify';
 import * as React from '@theia/core/shared/react';
-import { DebugSessionManager } from '../debug-session-manager';
+import { DebugConsoleManager } from './debug-console-manager';
 import { DebugConsoleSession } from './debug-console-session';
-import { DebugConsoleSessionUri } from './debug-console-session-uri';
+import { ConsoleWidgetProvider, DebugConsoleWidget } from './debug-console-widget';
 
 export type InDebugReplContextKey = ContextKey<boolean>;
 export const InDebugReplContextKey = Symbol('inDebugReplContextKey');
@@ -42,22 +41,17 @@ export namespace DebugConsoleCommands {
 }
 
 @injectable()
-export class DebugConsoleContribution extends AbstractViewContribution<ConsoleWidget> implements TabBarToolbarContribution, OpenHandler {
-
-    protected sessions: DebugConsoleSession[] = [];
+export class DebugConsoleContribution extends AbstractViewContribution<DebugConsoleWidget> implements TabBarToolbarContribution {
 
     @inject(WidgetManager)
     protected readonly widgetManager: WidgetManager;
 
-    @inject(DebugSessionManager)
-    protected readonly debugSessionManager: DebugSessionManager;
-
-    @inject(OpenerService)
-    protected readonly openerService: OpenerService;
+    @inject(DebugConsoleManager)
+    protected readonly debugConsoleManager: DebugConsoleManager;
 
     constructor() {
         super({
-            widgetId: DebugConsoleContribution.options.id,
+            widgetId: DebugConsoleWidget.ID,
             widgetName: DebugConsoleContribution.options.title!.label!,
             defaultWidgetOptions: {
                 area: 'bottom'
@@ -66,35 +60,9 @@ export class DebugConsoleContribution extends AbstractViewContribution<ConsoleWi
             toggleKeybinding: 'ctrlcmd+shift+y'
         });
     }
-    readonly id = `${DebugConsoleContribution.options.id}-handler`;
+    id: string;
     label?: string | undefined;
     iconClass?: string | undefined;
-
-    @postConstruct()
-    protected init(): void {
-        this.debugSessionManager.onDidCreateDebugSession(session => {
-            const consoleSession = new DebugConsoleSession(session);
-            const length = this.sessions.push(consoleSession);
-            if (length === 1) {
-                this.open(DebugConsoleSessionUri.create(session.label));
-            }
-        });
-        this.debugSessionManager.onDidDestroyDebugSession(session => {
-            this.sessions = this.sessions.filter(e => e.session !== session);
-        });
-    }
-
-    canHandle(uri: URI): MaybePromise<number> {
-        return DebugConsoleSessionUri.is(uri) ? 200 : 0;
-    }
-
-    async open(uri: URI, options?: OpenerOptions): Promise<ConsoleWidget> {
-        if (!DebugConsoleSessionUri.is(uri)) {
-            throw new Error(`Expected '${DebugConsoleSessionUri.SCHEME}' URI scheme. Got: ${uri} instead.`);
-        }
-        const widget = await this.openView(options);
-        return widget;
-    }
 
     registerCommands(commands: CommandRegistry): void {
         super.registerCommands(commands);
@@ -107,7 +75,7 @@ export class DebugConsoleContribution extends AbstractViewContribution<ConsoleWi
         });
     }
 
-    async registerToolbarItems(toolbarRegistry: TabBarToolbarRegistry): Promise<void> {
+    registerToolbarItems(toolbarRegistry: TabBarToolbarRegistry): void {
         toolbarRegistry.registerItem({
             id: 'debug-console-severity',
             render: widget => this.renderSeveritySelector(widget),
@@ -118,7 +86,7 @@ export class DebugConsoleContribution extends AbstractViewContribution<ConsoleWi
         toolbarRegistry.registerItem({
             id: 'debug-console-selector',
             render: widget => this.renderDebugConsoleSelector(widget),
-            isVisible: widget => this.withWidget(widget, () => this.sessions.length > 1),
+            isVisible: widget => this.withWidget(widget, () => this.debugConsoleManager.all.length > 1),
             // onDidChange: this.onSelectionChange
         });
 
@@ -146,28 +114,30 @@ export class DebugConsoleContribution extends AbstractViewContribution<ConsoleWi
         }
     };
 
-    static create(parent: interfaces.Container): ConsoleWidget {
+    static create(parent: interfaces.Container): DebugConsoleWidget {
         const inputFocusContextKey = parent.get<InDebugReplContextKey>(InDebugReplContextKey);
-        const child = ConsoleWidget.createContainer(parent, {
+        const child = DebugConsoleWidget.createContainer(parent, {
             ...DebugConsoleContribution.options,
             inputFocusContextKey
         });
-        const widget = child.get(ConsoleWidget);
-        // The dummy session has no underlying debug session
-        const session = new DebugConsoleSession(undefined);
-        widget.session = session;
+        const widget = child.get(DebugConsoleWidget);
         return widget;
     }
 
     static bindContribution(bind: interfaces.Bind): void {
+        bind(ConsoleWidgetProvider).toProvider(context => (session: ConsoleSession) => {
+            const widget = context.container.get(ConsoleWidget);
+            widget.session = session;
+            return Promise.resolve(widget);
+        });
+        bind(DebugConsoleManager).toSelf().inSingletonScope();
         bind(InDebugReplContextKey).toDynamicValue(({ container }) =>
             container.get(ContextKeyService).createKey('inDebugRepl', false)
         ).inSingletonScope();
         bindViewContribution(bind, DebugConsoleContribution);
-        bind(OpenHandler).to(DebugConsoleContribution).inSingletonScope();
         bind(TabBarToolbarContribution).toService(DebugConsoleContribution);
         bind(WidgetFactory).toDynamicValue(({ container }) => ({
-            id: DebugConsoleContribution.options.id,
+            id: DebugConsoleWidget.ID,
             createWidget: () => DebugConsoleContribution.create(container)
         }));
     }
@@ -190,9 +160,8 @@ export class DebugConsoleContribution extends AbstractViewContribution<ConsoleWi
 
     protected renderDebugConsoleSelector(widget: Widget | undefined): React.ReactNode {
         const availableConsoles: React.ReactNode[] = [];
-        this.sessions.forEach(e => {
-            const uriString = DebugConsoleSessionUri.create(e.session!.label).toString();
-            availableConsoles.push(<option value={uriString} key={uriString}>{e.session!.label}</option>);
+        this.debugConsoleManager.all.forEach(e => {
+            availableConsoles.push(<option value={e.id} key={e.id}>{e.label}</option>);
         });
         return <select
             className='theia-select'
@@ -206,7 +175,9 @@ export class DebugConsoleContribution extends AbstractViewContribution<ConsoleWi
     }
 
     protected changeDebugConsole = (event: React.ChangeEvent<HTMLSelectElement>) => {
-        open(this.openerService, DebugConsoleSessionUri.create(event.target.value));
+        const id = event.target.value;
+        const session = this.debugConsoleManager.get(id);
+        this.debugConsoleManager.selectedSession = session;
     };
 
     protected changeSeverity = (event: React.ChangeEvent<HTMLSelectElement>) => {
