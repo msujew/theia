@@ -102,6 +102,11 @@
     color: var(--theia-list-activeSelectionForeground) !important;
 }
 
+.theia-Tree:focus .theia-TreeNode.theia-mod-selected .theia-ExpansionToggle,
+.theia-Tree .ReactVirtualized__List:focus .theia-TreeNode.theia-mod-selected .theia-ExpansionToggle {
+    filter: brightness(0) invert(1);
+}
+
 .theia-TreeNodeInfo {
     color: var(--theia-foreground);
     opacity: 0.7;
