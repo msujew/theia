@@ -354,6 +354,10 @@
       "terminateActive": "Chcete ukončit aktivní relaci terminálu?",
       "terminateActiveMultiple": "Chcete ukončit aktivní relace terminálu {0}?"
     },
+    "test": {
+      "key": "Hodnota testu",
+      "key2": "Testovací hodnota 2"
+    },
     "toolbar": {
       "addCommand": "Přidání příkazu na panel nástrojů",
       "addCommandPlaceholder": "Najděte příkaz, který chcete přidat na panel nástrojů",

@@ -354,6 +354,10 @@
       "terminateActive": "¿Desea finalizar la sesión de terminal activa?",
       "terminateActiveMultiple": "¿Desea terminar las {0} sesiones de terminal activas?"
     },
+    "test": {
+      "key": "Valor de la prueba",
+      "key2": "Valor de prueba 2"
+    },
     "toolbar": {
       "addCommand": "Añadir comando a la barra de herramientas",
       "addCommandPlaceholder": "Buscar un comando para añadir a la barra de herramientas",
