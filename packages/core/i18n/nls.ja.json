@@ -354,6 +354,9 @@
       "terminateActive": "アクティブなターミナルセッションを終了しますか?",
       "terminateActiveMultiple": "{0}のアクティブな端末セッションを終了しますか?"
     },
+    "test": {
+      "key": "テスト値"
+    },
     "toolbar": {
       "addCommand": "ツールバーへのコマンド追加",
       "addCommandPlaceholder": "ツールバーに追加するコマンドを探す",

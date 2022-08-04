@@ -354,6 +354,9 @@
       "terminateActive": "Czy chcesz zakończyć aktywną sesję terminala?",
       "terminateActiveMultiple": "Czy chcesz zakończyć {0} aktywnych sesji terminalowych?"
     },
+    "test": {
+      "key": "Wartość testu"
+    },
     "toolbar": {
       "addCommand": "Dodaj polecenie do paska narzędzi",
       "addCommandPlaceholder": "Znajdź polecenie, które można dodać do paska narzędzi",

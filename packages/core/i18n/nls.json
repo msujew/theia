@@ -354,6 +354,9 @@
       "terminateActive": "Do you want to terminate the active terminal session?",
       "terminateActiveMultiple": "Do you want to terminate the {0} active terminal sessions?"
     },
+    "test": {
+      "key": "Test Value"
+    },
     "toolbar": {
       "addCommand": "Add Command to Toolbar",
       "addCommandPlaceholder": "Find a command to add to the toolbar",

@@ -354,6 +354,9 @@
       "terminateActive": "你想终止正在进行的终端会话吗?",
       "terminateActiveMultiple": "你想终止{0}活动的终端会话吗?"
     },
+    "test": {
+      "key": "测试值"
+    },
     "toolbar": {
       "addCommand": "将命令添加到工具栏",
       "addCommandPlaceholder": "找到一个要添加到工具栏的命令",

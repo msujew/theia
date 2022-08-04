@@ -354,6 +354,9 @@
       "terminateActive": "Be akarja fejezni az aktív terminál munkamenetet?",
       "terminateActiveMultiple": "Meg akarja szüntetni az {0} aktív terminál munkameneteket?"
     },
+    "test": {
+      "key": "Teszt érték"
+    },
     "toolbar": {
       "addCommand": "Parancs hozzáadása az eszköztárhoz",
       "addCommandPlaceholder": "Az eszköztárhoz hozzáadandó parancs keresése",

@@ -354,6 +354,9 @@
       "terminateActive": "Möchten Sie die aktive Terminalsitzung beenden?",
       "terminateActiveMultiple": "Sollen die {0} aktiven Terminalsitzungen beendet werden?"
     },
+    "test": {
+      "key": "Testwert"
+    },
     "toolbar": {
       "addCommand": "Befehl zur Symbolleiste hinzufügen",
       "addCommandPlaceholder": "Suchen Sie einen Befehl, den Sie der Symbolleiste hinzufügen möchten",
