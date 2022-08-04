@@ -30,6 +30,8 @@ import { StopReason } from '../common/frontend-application-state';
 
 nls.localize('theia/test/key', 'Test Value');
 
+nls.localize('theia/test/key2', 'Test Value 2');
+
 /**
  * Clients can implement to get a callback for contributing widgets to a shell on start.
  */
