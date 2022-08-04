@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { inject, injectable, named } from 'inversify';
-import { ContributionProvider, CommandRegistry, MenuModelRegistry, isOSX, BackendStopwatch, LogLevel, Stopwatch } from '../common';
+import { ContributionProvider, CommandRegistry, MenuModelRegistry, isOSX, BackendStopwatch, LogLevel, Stopwatch, nls } from '../common';
 import { MaybePromise } from '../common/types';
 import { KeybindingRegistry } from './keybinding';
 import { Widget } from './widgets';
@@ -27,6 +27,8 @@ import { CorePreferences } from './core-preferences';
 import { WindowService } from './window/window-service';
 import { TooltipService } from './tooltip-service';
 import { StopReason } from '../common/frontend-application-state';
+
+nls.localize('theia/test/key', 'Test Value');
 
 /**
  * Clients can implement to get a callback for contributing widgets to a shell on start.
