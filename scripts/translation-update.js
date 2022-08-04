@@ -56,9 +56,9 @@ function commitChanges() {
     cp.spawnSync('git', ['config', 'user.email', `<${email}>`]);
     // Stage everything
     cp.spawnSync('git', ['add', '-A']);
-    // Commit and push the changes
-    cp.spawnSync('git', ['commit', '-m', 'Automatic translation update']);
-    cp.spawnSync('git', ['push']);
+    // Amend and push the changes
+    cp.spawnSync('git', ['amend']);
+    cp.spawnSync('git', ['push', '-f']);
 }
 
 function getLastUserInfo() {

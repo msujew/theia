@@ -1,7 +1,7 @@
 name: Automatic Translation
 
 on:
-  pull_request:
+  push:
     branches:
       - master
 
