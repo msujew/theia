@@ -1,0 +1,48 @@
+{
+  "name": "@theia/ssh",
+  "version": "1.36.0",
+  "description": "Theia - SSH",
+  "dependencies": {
+    "@theia/core": "1.36.0",
+    "ssh2": "^1.11.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "theiaExtensions": [
+    {
+      "frontend": "lib/browser/ssh-frontend-module",
+      "backend": "lib/node/ssh-backend-module"
+    }
+  ],
+  "keywords": [
+    "theia-extension"
+  ],
+  "license": "EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/theia-ide/theia.git"
+  },
+  "bugs": {
+    "url": "https://github.com/theia-ide/theia/issues"
+  },
+  "homepage": "https://github.com/theia-ide/theia",
+  "files": [
+    "lib",
+    "src"
+  ],
+  "scripts": {
+    "build": "theiaext build",
+    "clean": "theiaext clean",
+    "compile": "theiaext compile",
+    "lint": "theiaext lint",
+    "test": "theiaext test",
+    "watch": "theiaext watch"
+  },
+  "devDependencies": {
+    "@theia/ext-scripts": "1.36.0"
+  },
+  "nyc": {
+    "extends": "../../configs/nyc.json"
+  }
+}
