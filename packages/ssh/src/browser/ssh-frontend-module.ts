@@ -14,27 +14,11 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { Command, CommandContribution, CommandRegistry } from '@theia/core';
-import { injectable } from '@theia/core/shared/inversify';
-const { Client } = require('ssh2');
-export namespace RemoteSSHCommands {
-    export const CONNECT: Command = Command.toLocalizedCommand({
-        id: 'remoteSSH.connect',
-        category: 'RemoteSSh',
-        label: 'Connect to Host...',
-    }, 'theia/remoteSSH/connect');
-}
+import { CommandContribution } from '@theia/core';
+import { ContainerModule } from '@theia/core/shared/inversify';
+import { SSHFrontendContribution } from './ssh-frontend-contribution';
 
-@injectable()
-export class SSHBackendContribution implements CommandContribution {
-
-    registerCommands(commands: CommandRegistry): void {
-        commands.registerCommand(RemoteSSHCommands.CONNECT, {
-            execute: (host: string) => {
-                const connection = new Client();
-                connection.
-            }
-        });
-    }
-
-}
+export default new ContainerModule(bind => {
+    bind(SSHFrontendContribution).toSelf().inSingletonScope();
+    bind(CommandContribution).to(SSHFrontendContribution);
+});

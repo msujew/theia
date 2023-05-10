@@ -111,6 +111,9 @@
       "path": "../../packages/secondary-window"
     },
     {
+      "path": "../../packages/ssh"
+    },
+    {
       "path": "../../packages/task"
     },
     {

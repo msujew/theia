@@ -48,23 +48,11 @@ export class WebSocketConnectionProvider extends AbstractConnectionProvider<WebS
         return container.get(WebSocketConnectionProvider).createProxy<T>(path, arg);
     }
 
-    protected readonly socket: Socket;
+    protected socket: Socket;
 
     constructor() {
         super();
-        const url = this.createWebSocketUrl(WebSocketChannel.wsPath);
-        this.socket = this.createWebSocket(url);
-        this.socket.on('connect', () => {
-            this.initializeMultiplexer();
-            if (this.reconnectChannelOpeners.length > 0) {
-                this.reconnectChannelOpeners.forEach(opener => opener());
-                this.reconnectChannelOpeners = [];
-            }
-            this.socket.on('disconnect', () => this.fireSocketDidClose());
-            this.socket.on('message', () => this.onIncomingMessageActivityEmitter.fire(undefined));
-            this.fireSocketDidOpen();
-        });
-        this.socket.connect();
+        this.connect();
     }
 
     protected createMainChannel(): Channel {
@@ -84,6 +72,11 @@ export class WebSocketConnectionProvider extends AbstractConnectionProvider<WebS
             onMessage: cb => socket.on('message', data => cb(data)),
             send: message => socket.emit('message', message)
         };
+    }
+
+    reconnect(path: string = WebSocketChannel.wsPath): void {
+        this.socket.disconnect();
+        this.connect(path);
     }
 
     override async openChannel(path: string, handler: (channel: Channel) => void, options?: WebSocketOptions): Promise<void> {
@@ -109,6 +102,22 @@ export class WebSocketConnectionProvider extends AbstractConnectionProvider<WebS
 
     protected createHttpWebSocketUrl(path: string): string {
         return new Endpoint({ path }).getRestUrl().toString();
+    }
+
+    protected connect(path: string = WebSocketChannel.wsPath): void {
+        const url = this.createWebSocketUrl(path);
+        this.socket = this.createWebSocket(url);
+        this.socket.on('connect', () => {
+            this.initializeMultiplexer();
+            if (this.reconnectChannelOpeners.length > 0) {
+                this.reconnectChannelOpeners.forEach(opener => opener());
+                this.reconnectChannelOpeners = [];
+            }
+            this.socket.on('disconnect', () => this.fireSocketDidClose());
+            this.socket.on('message', () => this.onIncomingMessageActivityEmitter.fire(undefined));
+            this.fireSocketDidOpen();
+        });
+        this.socket.connect();
     }
 
     /**

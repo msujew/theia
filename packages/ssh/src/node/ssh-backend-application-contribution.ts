@@ -14,17 +14,27 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { ContainerModule } from '@theia/core/shared/inversify';
-import { BackendApplicationContribution, MessagingService } from '@theia/core/lib/node';
-import { SSHBackenApplicationContribution } from './ssh-backend-application-contribution';
+import * as express from '@theia/core/shared/express';
+// import * as http from 'http';
+import { BackendApplicationContribution } from '@theia/core/lib/node';
+import { inject, injectable } from '@theia/core/shared/inversify';
 import { SSHConnectorService } from './ssh-connector-service';
-import { SSHProxyChannel } from './ssh-proxy-channel';
+import { ConnectionInfo } from '../common/dto';
 
-export default new ContainerModule(bind => {
-    bind(SSHConnectorService).toSelf().inSingletonScope();
-    bind(SSHBackenApplicationContribution).toSelf().inSingletonScope();
-    bind(BackendApplicationContribution).to(SSHBackenApplicationContribution);
+@injectable()
+export class SSHBackenApplicationContribution implements BackendApplicationContribution {
 
-    bind(SSHProxyChannel).toSelf().inSingletonScope();
-    bind(MessagingService.Contribution).to(SSHProxyChannel);
-});
+    @inject(SSHConnectorService)
+    protected readonly sshConnectorService: SSHConnectorService;
+
+    configure(app: express.Application): void {
+        app.post('/ssh/connect', express.json(), async (req, resp) => {
+            try {
+                await this.sshConnectorService.connect(req.body as ConnectionInfo);
+                resp.status(200).send('ok');
+            } catch (err) {
+                resp.status(500).send('could not connect to host');
+            }
+        });
+    }
+}

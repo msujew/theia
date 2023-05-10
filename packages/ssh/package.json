@@ -4,7 +4,9 @@
   "description": "Theia - SSH",
   "dependencies": {
     "@theia/core": "1.37.0",
-    "ssh2": "^1.12.0"
+    "ssh2": "^1.12.0",
+    "socket.io": "^4.5.3",
+    "socket.io-client": "^4.5.3"
   },
   "publishConfig": {
     "access": "public"
