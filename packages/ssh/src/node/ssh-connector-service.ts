@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { readFileSync } from 'fs';
+import * as fs from 'fs';
 import * as os from 'os';
 import { Client, utils } from 'ssh2';
 import { ConnectionInfo } from '../common/dto';
@@ -40,8 +40,8 @@ export class SSHConnectorService implements Disposable {
 
     async connect(connectionInfo: ConnectionInfo): Promise<void> {
         const sshClient = new Client();
-        const key = readFileSync(os.homedir() + '/.ssh/id_rsa');
-        return new Promise(async (res, rej) => {
+        const key = await fs.promises.readFile(os.homedir() + '/.ssh/id_rsa');
+        return new Promise(async (resolve, reject) => {
             sshClient
             .on('ready', () => {
                 this.client = sshClient;
@@ -49,7 +49,7 @@ export class SSHConnectorService implements Disposable {
                     sshClient.forwardOut('127.0.0.1', socket.localPort!, '127.0.0.1', 3000, (err, stream) => {
                         if (err) {
                             console.error(err);
-                            rej(err);
+                            reject(err);
                         } else {
                             stream.pipe(socket).pipe(stream);
                         }
@@ -59,15 +59,15 @@ export class SSHConnectorService implements Disposable {
                     console.log('ssh proxy started on ' + port);
                     this.proxyClient = io(`ws://localhost:${port}${WebSocketChannel.wsPath}`, { autoConnect: false });
                     this.sshConnectionEstablishedEmitter.fire(this.proxyClient);
-                    res();
+                    resolve();
                 });
-                res();
+                resolve();
             }).on('keyboard-interactive', (name, instructions, lang, prompts, finish) => {
                 console.log(`keybord request ${name} ${instructions} ${lang}`);
             }).on('close', () => {
                 this.client = undefined;
             }).on('error', err => {
-                rej(err);
+                reject(err);
             }).connect({
                 debug: mes => console.log(mes),
                 host: connectionInfo.host,

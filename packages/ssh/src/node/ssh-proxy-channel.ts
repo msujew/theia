@@ -25,7 +25,7 @@ export class SSHProxyChannel implements MessagingService.Contribution {
     @inject(SSHConnectorService)
     protected readonly sshConnectorService: SSHConnectorService;
 
-    private proxySocket: Socket;
+    protected proxySocket?: Socket;
 
     configure(service: MessagingService): void {
         this.sshConnectorService.onSSHConnectionEstablished(proxySocket => {
@@ -33,14 +33,15 @@ export class SSHProxyChannel implements MessagingService.Contribution {
         });
         service.ws('/ssh-services', (params, socket) => {
             if (this.proxySocket) {
-                if (!this.proxySocket.connected) {
-                    this.proxySocket.connect();
+                const proxy = this.proxySocket;
+                if (!proxy.connected) {
+                    proxy.connect();
                 }
-                this.proxySocket.onAny((event, ...args) => {
+                proxy.onAny((event, ...args) => {
                     socket.emit(event, ...args);
                 });
                 socket.onAny((event, ...args) => {
-                    this.proxySocket.emit(event, ...args);
+                    proxy.emit(event, ...args);
                 });
             }
         });
