@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { injectable, interfaces, decorate, unmanaged } from 'inversify';
+import { injectable, interfaces, decorate, unmanaged, postConstruct } from 'inversify';
 import { JsonRpcProxyFactory, JsonRpcProxy, Emitter, Event, Channel } from '../../common';
 import { Endpoint } from '../endpoint';
 import { AbstractConnectionProvider } from '../../common/messaging/abstract-connection-provider';
@@ -52,6 +52,10 @@ export class WebSocketConnectionProvider extends AbstractConnectionProvider<WebS
 
     constructor() {
         super();
+    }
+
+    @postConstruct()
+    protected init(): void {
         this.connect();
     }
 
@@ -72,11 +76,6 @@ export class WebSocketConnectionProvider extends AbstractConnectionProvider<WebS
             onMessage: cb => socket.on('message', data => cb(data)),
             send: message => socket.emit('message', message)
         };
-    }
-
-    reconnect(path: string = WebSocketChannel.wsPath): void {
-        this.socket.disconnect();
-        this.connect(path);
     }
 
     override async openChannel(path: string, handler: (channel: Channel) => void, options?: WebSocketOptions): Promise<void> {

@@ -15,6 +15,7 @@
 // *****************************************************************************
 
 import { Socket } from 'socket.io';
+import { Disposable } from '../../common/disposable';
 import { Channel } from '../../common/message-rpc/channel';
 
 export interface MessagingService {
@@ -22,7 +23,7 @@ export interface MessagingService {
      * Accept a web socket channel on the given path.
      * A path supports the route syntax: https://github.com/rcs/route-parser#what-can-i-use-in-my-routes.
      */
-    wsChannel(path: string, callback: (params: MessagingService.PathParams, channel: Channel) => void): void;
+    wsChannel(path: string, callback: (params: MessagingService.PathParams, channel: Channel) => void): Disposable;
     /**
      * Accept a web socket connection on the given path.
      * A path supports the route syntax: https://github.com/rcs/route-parser#what-can-i-use-in-my-routes.
@@ -31,7 +32,7 @@ export interface MessagingService {
      * Prefer using web socket channels over establishing new web socket connection. Clients can handle only limited amount of web sockets
      * and excessive amount can cause performance degradation. All web socket channels share a single web socket connection.
      */
-    ws(path: string, callback: (params: MessagingService.PathParams, socket: Socket) => void): void;
+    ws(path: string, callback: (params: MessagingService.PathParams, socket: Socket) => void): Disposable;
 }
 export namespace MessagingService {
     /** Inversify container identifier for the `MessagingService` component. */

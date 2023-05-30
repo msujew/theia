@@ -14,11 +14,13 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { CommandContribution } from '@theia/core';
 import { ContainerModule } from '@theia/core/shared/inversify';
-import { SSHFrontendContribution } from './ssh-frontend-contribution';
+import { BackendApplicationContribution } from '@theia/core/lib/node';
+import { RemoteBackenApplicationContribution } from './remote-backend-application-contribution';
+import { RemoteSessionService } from './remote-session-service';
 
 export default new ContainerModule(bind => {
-    bind(SSHFrontendContribution).toSelf().inSingletonScope();
-    bind(CommandContribution).to(SSHFrontendContribution);
+    bind(RemoteSessionService).toSelf().inSingletonScope();
+    bind(RemoteBackenApplicationContribution).toSelf().inSingletonScope();
+    bind(BackendApplicationContribution).to(RemoteBackenApplicationContribution);
 });

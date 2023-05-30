@@ -14,17 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { ContainerModule } from '@theia/core/shared/inversify';
-import { BackendApplicationContribution, MessagingService } from '@theia/core/lib/node';
-import { SSHBackenApplicationContribution } from './ssh-backend-application-contribution';
-import { SSHConnectorService } from './ssh-connector-service';
-import { SSHProxyChannel } from './ssh-proxy-channel';
-
-export default new ContainerModule(bind => {
-    bind(SSHConnectorService).toSelf().inSingletonScope();
-    bind(SSHBackenApplicationContribution).toSelf().inSingletonScope();
-    bind(BackendApplicationContribution).to(SSHBackenApplicationContribution);
-
-    bind(SSHProxyChannel).toSelf().inSingletonScope();
-    bind(MessagingService.Contribution).to(SSHProxyChannel);
-});
+export interface RemoteConnectionInfo {
+    user?: string;
+    host?: string;
+}

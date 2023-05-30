@@ -209,6 +209,12 @@ export class BackendApplication {
         // concurrent initialize/configure in undefined order if they provide both
         this.initialize();
 
+        this.app.use((req, __, next) => {
+            const fullUrl = req.protocol + '://' + req.get('host') + req.originalUrl;
+            console.log('request for: ' + fullUrl);
+            next();
+        });
+
         this.app.get('*.js', this.serveGzipped.bind(this, 'text/javascript'));
         this.app.get('*.js.map', this.serveGzipped.bind(this, 'application/json'));
         this.app.get('*.css', this.serveGzipped.bind(this, 'text/css'));

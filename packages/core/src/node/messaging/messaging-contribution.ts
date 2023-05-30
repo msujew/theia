@@ -18,7 +18,7 @@ import * as http from 'http';
 import * as https from 'https';
 import { Server, Socket } from 'socket.io';
 import { injectable, inject, named, postConstruct, interfaces, Container } from 'inversify';
-import { ContributionProvider, ConnectionHandler, bindContributionProvider } from '../../common';
+import { ContributionProvider, ConnectionHandler, bindContributionProvider, Disposable } from '../../common';
 import { IWebSocket, WebSocketChannel } from '../../common/messaging/web-socket-channel';
 import { BackendApplicationContribution } from '../backend-application';
 import { MessagingService } from './messaging-service';
@@ -59,12 +59,12 @@ export class MessagingContribution implements BackendApplicationContribution, Me
         }
     }
 
-    wsChannel(spec: string, callback: (params: MessagingService.PathParams, channel: Channel) => void): void {
-        this.channelHandlers.push(spec, (params, channel) => callback(params, channel));
+    wsChannel(spec: string, callback: (params: MessagingService.PathParams, channel: Channel) => void): Disposable {
+        return this.channelHandlers.push(spec, (params, channel) => callback(params, channel));
     }
 
-    ws(spec: string, callback: (params: MessagingService.PathParams, socket: Socket) => void): void {
-        this.wsHandlers.push(spec, callback);
+    ws(spec: string, callback: (params: MessagingService.PathParams, socket: Socket) => void): Disposable {
+        return this.wsHandlers.push(spec, callback);
     }
 
     protected checkAliveTimeout = 30000; // 30 seconds
@@ -83,8 +83,10 @@ export class MessagingContribution implements BackendApplicationContribution, Me
             // We provide a `fix-origin` header in the `WebSocketConnectionProvider`
             request.headers.origin = request.headers['fix-origin'] as string;
             if (await this.allowConnect(socket.request)) {
-                this.handleConnection(socket);
+                // Call the event first
+                // Some listeners might add additional handlers that can handle this new request
                 this.messagingListener.onDidWebSocketUpgrade(socket.request, socket);
+                this.handleConnection(socket);
             } else {
                 socket.disconnect(true);
             }
@@ -164,15 +166,20 @@ export namespace MessagingContribution {
             protected readonly parent?: ConnectionHandlers<T>
         ) { }
 
-        push(spec: string, callback: (params: MessagingService.PathParams, connection: T) => void): void {
+        push(spec: string, callback: (params: MessagingService.PathParams, connection: T) => void): Disposable {
             const route = new Route(spec);
-            this.handlers.push((path, channel) => {
+            const handler = (path: string, channel: T): string | false => {
                 const params = route.match(path);
                 if (!params) {
                     return false;
                 }
                 callback(params, channel);
                 return route.reverse(params);
+            };
+            this.handlers.push(handler);
+            return Disposable.create(() => {
+                const index = this.handlers.indexOf(handler);
+                this.handlers.splice(index, 1);
             });
         }
 

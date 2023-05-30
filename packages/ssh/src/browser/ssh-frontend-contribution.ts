@@ -50,9 +50,9 @@ export class SSHFrontendContribution implements CommandContribution {
                     user = await this.requestQuickInput('user');
                 }
 
-                await this.sendSSHConnect(host!, user!);
+                const channel = await this.sendSSHConnect(host!, user!);
 
-                this.webSocketConnectionProvider.reconnect('/ssh-services');
+                window.location.replace(`http://localhost:3000/?remote=${channel}`);
             }
         });
     }
@@ -68,12 +68,16 @@ export class SSHFrontendContribution implements CommandContribution {
         });
     }
 
-    async sendSSHConnect(host: string, user: string): Promise<void> {
-        await fetch(new Endpoint({ path: '/ssh/connect' }).getRestUrl().toString(), {
+    async sendSSHConnect(host: string, user: string): Promise<string | undefined> {
+        const response = await fetch(new Endpoint({ path: '/ssh/connect' }).getRestUrl().toString(), {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ host, user })
         });
-
+        if (response.status === 200) {
+            return response.text();
+        } else {
+            return undefined;
+        }
     }
 }
