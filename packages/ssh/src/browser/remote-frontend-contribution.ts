@@ -58,11 +58,12 @@ export class SSHFrontendContribution implements CommandContribution {
     }
 
     async requestQuickInput(prompt: string): Promise<string | undefined> {
-        return new Promise<string | undefined>((resolve, reject) => {
+        return new Promise<string | undefined>(resolve => {
             const input = this.quickInputService.createInputBox();
             input.prompt = prompt;
             input.onDidAccept(async () => {
                 resolve(input.value);
+                input.hide();
             });
             input.show();
         });

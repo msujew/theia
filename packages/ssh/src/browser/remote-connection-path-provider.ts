@@ -16,13 +16,13 @@
 
 import { WebSocketConnectionPathProvider } from '@theia/core/lib/browser';
 import { injectable } from '@theia/core/shared/inversify';
-import { nanoid } from 'nanoid';
+import { v4 } from 'uuid';
 
 @injectable()
 export class RemoteWebSocketConnectionPathProvider extends WebSocketConnectionPathProvider {
 
     protected remoteId = this.getRemoteId();
-    protected sessionId = nanoid(10);
+    protected sessionId = v4();
 
     override getConnectionPath(connectionPath: string): string {
         if (this.remoteId) {

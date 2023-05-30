@@ -20,7 +20,7 @@ import { Client, utils } from 'ssh2';
 import { RemoteConnectionInfo } from '../common/remote-types';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { RemoteConnection } from './remote-types';
-import { nanoid } from 'nanoid';
+import { v4 } from 'uuid';
 import { RemoteProxyServerProvider } from './remote-proxy-server-provider';
 
 @injectable()
@@ -36,7 +36,7 @@ export class RemoteConnectionService {
     }
 
     async connect(connectionInfo: RemoteConnectionInfo): Promise<string> {
-        const sessionId = nanoid(10);
+        const sessionId = v4();
         const sshClient = new Client();
         const key = await fs.promises.readFile(os.homedir() + '/.ssh/id_rsa');
         return new Promise(async (resolve, reject) => {
