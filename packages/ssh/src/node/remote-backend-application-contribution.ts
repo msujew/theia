@@ -15,19 +15,17 @@
 // *****************************************************************************
 
 import * as express from '@theia/core/shared/express';
-// import * as http from 'http';
 import { BackendApplicationContribution, MessagingService } from '@theia/core/lib/node';
 import { MessagingContribution } from '@theia/core/lib/node/messaging/messaging-contribution';
 import { inject, injectable } from '@theia/core/shared/inversify';
-import { RemoteSessionService } from './remote-session-service';
+import { RemoteConnectionService } from './remote-connection-service';
 import { RemoteConnectionInfo } from '../common/remote-types';
-import { v4 } from 'uuid';
 
 @injectable()
 export class RemoteBackenApplicationContribution implements BackendApplicationContribution {
 
-    @inject(RemoteSessionService)
-    protected readonly sshConnectorService: RemoteSessionService;
+    @inject(RemoteConnectionService)
+    protected readonly remoteConnectionService: RemoteConnectionService;
 
     @inject(MessagingContribution)
     protected readonly messagingService: MessagingService;
@@ -38,27 +36,11 @@ export class RemoteBackenApplicationContribution implements BackendApplicationCo
                 // TODO: return a string here that gets associated to the proxy
                 // When a frontend requests a ssh connection for this proxy, generate a new websocket channel (+proxy server) that proxies all the data
                 // The websocket channel only lives in the scope of the user connection and gets deleted afterwards
-                const proxySocket = await this.sshConnectorService.connect(req.body as RemoteConnectionInfo);
-                const uuid = v4();
-                this.messagingService.ws(`/${uuid}`, (_, socket) => {
-                    if (!proxySocket.connected) {
-                        proxySocket.connect();
-                    }
-                    proxySocket.onAny((event, ...args) => {
-                        socket.emit(event, ...args);
-                    });
-                    socket.onAny((event, ...args) => {
-                        proxySocket.emit(event, ...args);
-                    });
-                });
-                resp.status(200).send(uuid);
+                const remoteId = await this.remoteConnectionService.connect(req.body as RemoteConnectionInfo);
+                resp.status(200).send(remoteId);
             } catch (err) {
                 resp.status(500).send('could not connect to host');
             }
         });
-    }
-
-    protected insertProxyMiddleware(url: string): void {
-
     }
 }

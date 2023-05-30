@@ -85,7 +85,7 @@ export class MessagingContribution implements BackendApplicationContribution, Me
             if (await this.allowConnect(socket.request)) {
                 // Call the event first
                 // Some listeners might add additional handlers that can handle this new request
-                this.messagingListener.onDidWebSocketUpgrade(socket.request, socket);
+                await this.messagingListener.onDidWebSocketUpgrade(socket.request, socket);
                 this.handleConnection(socket);
             } else {
                 socket.disconnect(true);

@@ -14,42 +14,19 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import type { Client } from 'ssh2';
-import { Disposable } from '@theia/core';
-import * as net from 'net';
-import { Socket } from 'socket.io-client';
+import { injectable } from '@theia/core/shared/inversify';
+import { io, Socket } from 'socket.io-client';
 
-export interface RemoteConnection {
-    id: string;
-    client: Client;
-    server: net.Server
-}
-
-export interface RemoteSessionOptions {
-    id: string;
+export interface RemoteProxySocketProviderOptions {
     port: number;
-    onDispose: () => void;
+    path: string;
 }
 
-export class RemoteSession implements Disposable {
+@injectable()
+export class RemoteProxySocketProvider {
 
-    private onDispose: () => void;
-
-    readonly id: string;
-    readonly port: number;
-
-    sockets: Socket[] = [];
-
-    constructor(options: RemoteSessionOptions) {
-        this.port = options.port;
-        this.id = options.id;
-        this.onDispose = this.onDispose;
+    getProxySocket(options: RemoteProxySocketProviderOptions): Socket {
+        return io(`ws://localhost:${options.port}${options.path}`, { autoConnect: false });
     }
 
-    dispose(): void {
-        for (const socket of this.sockets) {
-            socket.close();
-        }
-        this.onDispose();
-    }
 }
