@@ -1,7 +1,7 @@
 {
-  "name": "@theia/ssh",
+  "name": "@theia/remote",
   "version": "1.38.0",
-  "description": "Theia - SSH",
+  "description": "Theia - Remote",
   "dependencies": {
     "@theia/core": "1.38.0",
     "express-http-proxy": "^1.6.3",

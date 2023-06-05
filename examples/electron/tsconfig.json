@@ -99,6 +99,9 @@
       "path": "../../packages/property-view"
     },
     {
+      "path": "../../packages/remote"
+    },
+    {
       "path": "../../packages/scm"
     },
     {
@@ -109,9 +112,6 @@
     },
     {
       "path": "../../packages/secondary-window"
-    },
-    {
-      "path": "../../packages/ssh"
     },
     {
       "path": "../../packages/task"
