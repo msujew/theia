@@ -33,10 +33,10 @@ export class RemoteWebSocketConnectionPathProvider extends WebSocketConnectionPa
     }
 
     protected getRemoteId(): string | undefined {
-        const remoteId = new URL(window.location.href).searchParams.get('remote') || undefined;
-        if (remoteId) {
-            document.cookie = `remoteId=${remoteId}`;
-        }
+        const remoteId = document.cookie
+            .split('; ')
+            .find(row => row.startsWith('remoteId='))
+            ?.split('=')[1];
         return remoteId;
     }
 

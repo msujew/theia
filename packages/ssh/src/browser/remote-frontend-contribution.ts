@@ -50,9 +50,9 @@ export class SSHFrontendContribution implements CommandContribution {
                     user = await this.requestQuickInput('user');
                 }
 
-                const channel = await this.sendSSHConnect(host!, user!);
-
-                window.location.replace(`http://localhost:3000/?remote=${channel}`);
+                const remoteId = await this.sendSSHConnect(host!, user!);
+                document.cookie = `remoteId=${remoteId}`;
+                window.location.reload();
             }
         });
     }

@@ -55,6 +55,9 @@ export class RemoteMessagingListenerContribution implements MessagingListenerCon
             incomingSocket.addListener('disconnect', () => {
                 proxySocket.close();
             });
+            proxySocket.on('disconnect', () => {
+                incomingSocket.disconnect(true);
+            });
             this.messagingService.ws(namespace, (_params, socket) => {
                 if (!proxySocket.connected) {
                     proxySocket.connect();

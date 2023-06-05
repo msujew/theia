@@ -20,7 +20,7 @@ import { Client, utils } from 'ssh2';
 import { RemoteConnectionInfo } from '../common/remote-types';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { RemoteConnection } from './remote-types';
-import { v4 } from 'uuid';
+import { nanoid } from 'nanoid';
 import { RemoteProxyServerProvider } from './remote-proxy-server-provider';
 
 @injectable()
@@ -35,20 +35,21 @@ export class RemoteConnectionService {
         return this.connections.get(id);
     }
 
-    async connect(connectionInfo: RemoteConnectionInfo): Promise<string> {
-        const sessionId = v4();
+    async connect(connectionInfo: RemoteConnectionInfo): Promise<RemoteConnection> {
+        const sessionId = nanoid(10);
         const sshClient = new Client();
         const key = await fs.promises.readFile(os.homedir() + '/.ssh/id_rsa');
         return new Promise(async (resolve, reject) => {
             sshClient
                 .on('ready', async () => {
                     const server = await this.serverProvider.getProxyServer(sshClient);
-                    this.connections.set(sessionId, {
+                    const connection: RemoteConnection = {
                         client: sshClient,
                         id: sessionId,
                         server
-                    });
-                    resolve(sessionId);
+                    };
+                    this.connections.set(sessionId, connection);
+                    resolve(connection);
                     /* .on('keyboard-interactive', (name, instructions, lang, prompts, finish) => {
                    console.log(`keybord request ${name} ${instructions} ${lang}`);
                    }) */
@@ -59,7 +60,7 @@ export class RemoteConnectionService {
                     host: connectionInfo.host,
                     username: connectionInfo.user,
                     tryKeyboard: true,
-                    authHandler: ['publickey', 'keyboard-interactive'],
+                    authHandler: ['publickey', 'hostbased'],
                     privateKey: key,
                     passphrase: await this.getPassphrase(key),
                 });

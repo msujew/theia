@@ -19,6 +19,13 @@ import { Disposable } from '@theia/core';
 import * as net from 'net';
 import { Socket } from 'socket.io-client';
 
+export interface ExpressLayer {
+    name: string
+    regexp: RegExp
+    handle: Function
+    path?: string
+}
+
 export interface RemoteConnection {
     id: string;
     client: Client;
