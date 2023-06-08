@@ -18,5 +18,3 @@ export interface RemoteConnectionInfo {
     user?: string;
     host?: string;
 }
-
-export const remoteWsPath = '/remote-services';

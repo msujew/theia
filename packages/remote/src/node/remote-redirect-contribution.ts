@@ -15,13 +15,11 @@
 // *****************************************************************************
 
 import { inject, injectable } from '@theia/core/shared/inversify';
-import { MessagingContribution } from '@theia/core/lib/node/messaging/messaging-contribution';
 import { MessagingService } from '@theia/core/lib/node/messaging/messaging-service';
 import { Socket } from 'socket.io';
 import { RemoteSessionService } from './remote-session-service';
 import { RemoteConnectionSocketProvider } from './remote-connection-socket-provider';
 import { getCookies } from './remote-utils';
-import { remoteWsPath } from '../common/remote-types';
 
 @injectable()
 export class RemoteRedirectContribution implements MessagingService.RedirectContribution {
@@ -32,17 +30,7 @@ export class RemoteRedirectContribution implements MessagingService.RedirectCont
     @inject(RemoteConnectionSocketProvider)
     protected readonly socketProvider: RemoteConnectionSocketProvider;
 
-    @inject(MessagingContribution)
-    protected readonly messagingService: MessagingService;
-
-    protected namespaceRegex = /^\/remote\/([^/]+)\/([^/]+)(\/.*)$/;
-
     async redirect(socket: Socket): Promise<boolean> {
-        // `remote-services` is the namespace for remote connection handling
-        // Connection handling is done on the local system
-        if (socket.nsp.name === remoteWsPath) {
-            return false;
-        }
         const cookies = getCookies(socket.request);
         const remoteId = cookies.remoteId;
         if (!remoteId) {

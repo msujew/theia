@@ -15,9 +15,8 @@
 // *****************************************************************************
 
 import { ContainerModule } from 'inversify';
-import { WebSocketConnectionPathProvider, WebSocketConnectionProvider } from './ws-connection-provider';
+import { WebSocketConnectionProvider } from './ws-connection-provider';
 
 export const messagingFrontendModule = new ContainerModule(bind => {
-    bind(WebSocketConnectionPathProvider).toSelf().inSingletonScope();
     bind(WebSocketConnectionProvider).toSelf().inSingletonScope();
 });

@@ -76,7 +76,6 @@ export class RemoteSSHConnectionProviderImpl implements RemoteSSHConnectionProvi
             }).on('error', err => {
                 deferred.reject(err);
             }).connect({
-                debug: mes => console.log(mes),
                 host: host,
                 username: user,
                 authHandler: (methodsLeft, successes, callback) => (sshAuthHandler(methodsLeft, successes, callback), undefined)
