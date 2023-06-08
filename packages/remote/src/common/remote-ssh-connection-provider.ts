@@ -14,9 +14,11 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
-export interface RemoteConnectionInfo {
-    user?: string;
-    host?: string;
-}
+export const RemoteSSHConnectionProviderPath = '/remote/ssh';
 
-export const remoteWsPath = '/remote-services';
+export const RemoteSSHConnectionProvider = Symbol('RemoteSSHConnectionProvider');
+
+export interface RemoteSSHConnectionProvider {
+    establishConnection(host: string, user: string): Promise<string>;
+    isConnectionAlive(remoteId: string): Promise<boolean>;
+}

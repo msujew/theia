@@ -18,7 +18,7 @@ import * as http from 'http';
 import * as https from 'https';
 import { Server, Socket } from 'socket.io';
 import { injectable, inject, named, postConstruct, interfaces, Container } from 'inversify';
-import { ContributionProvider, ConnectionHandler, bindContributionProvider, Disposable } from '../../common';
+import { ContributionProvider, ConnectionHandler, bindContributionProvider } from '../../common';
 import { IWebSocket, WebSocketChannel } from '../../common/messaging/web-socket-channel';
 import { BackendApplicationContribution } from '../backend-application';
 import { MessagingService } from './messaging-service';
@@ -42,6 +42,9 @@ export class MessagingContribution implements BackendApplicationContribution, Me
     @inject(ContributionProvider) @named(MessagingService.Contribution)
     protected readonly contributions: ContributionProvider<MessagingService.Contribution>;
 
+    @inject(ContributionProvider) @named(MessagingService.RedirectContribution)
+    protected readonly redirectContributions: ContributionProvider<MessagingService.RedirectContribution>;
+
     @inject(WsRequestValidator)
     protected readonly wsRequestValidator: WsRequestValidator;
 
@@ -59,11 +62,11 @@ export class MessagingContribution implements BackendApplicationContribution, Me
         }
     }
 
-    wsChannel(spec: string, callback: (params: MessagingService.PathParams, channel: Channel) => void): Disposable {
+    wsChannel(spec: string, callback: (params: MessagingService.PathParams, channel: Channel) => void): void {
         return this.channelHandlers.push(spec, (params, channel) => callback(params, channel));
     }
 
-    ws(spec: string, callback: (params: MessagingService.PathParams, socket: Socket) => void): Disposable {
+    ws(spec: string, callback: (params: MessagingService.PathParams, socket: Socket) => void): void {
         return this.wsHandlers.push(spec, callback);
     }
 
@@ -83,20 +86,27 @@ export class MessagingContribution implements BackendApplicationContribution, Me
             // We provide a `fix-origin` header in the `WebSocketConnectionProvider`
             request.headers.origin = request.headers['fix-origin'] as string;
             if (await this.allowConnect(socket.request)) {
-                // Call the event first
-                // Some listeners might add additional handlers that can handle this new request
-                await this.messagingListener.onDidWebSocketUpgrade(socket.request, socket);
-                this.handleConnection(socket);
+                await this.handleConnection(socket);
+                this.messagingListener.onDidWebSocketUpgrade(socket.request, socket);
             } else {
                 socket.disconnect(true);
             }
         });
     }
 
-    protected handleConnection(socket: Socket): void {
-        const pathname = socket.nsp.name;
-        if (pathname && !this.wsHandlers.route(pathname, socket)) {
-            console.error('Cannot find a ws handler for the path: ' + pathname);
+    protected async handleConnection(socket: Socket): Promise<void> {
+        let redirect = false;
+        for (const redirectContribution of this.redirectContributions.getContributions()) {
+            redirect = await redirectContribution.redirect(socket);
+            if (redirect) {
+                break;
+            }
+        }
+        if (!redirect) {
+            const pathname = socket.nsp.name;
+            if (pathname && !this.wsHandlers.route(pathname, socket)) {
+                console.error('Cannot find a ws handler for the path: ' + pathname);
+            }
         }
     }
 
@@ -166,7 +176,7 @@ export namespace MessagingContribution {
             protected readonly parent?: ConnectionHandlers<T>
         ) { }
 
-        push(spec: string, callback: (params: MessagingService.PathParams, connection: T) => void): Disposable {
+        push(spec: string, callback: (params: MessagingService.PathParams, connection: T) => void): void {
             const route = new Route(spec);
             const handler = (path: string, channel: T): string | false => {
                 const params = route.match(path);
@@ -177,10 +187,6 @@ export namespace MessagingContribution {
                 return route.reverse(params);
             };
             this.handlers.push(handler);
-            return Disposable.create(() => {
-                const index = this.handlers.indexOf(handler);
-                this.handlers.splice(index, 1);
-            });
         }
 
         route(path: string, connection: T): string | false {

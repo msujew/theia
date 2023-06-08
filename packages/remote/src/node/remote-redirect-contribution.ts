@@ -14,62 +14,66 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { MessagingListenerContribution } from '@theia/core/lib/node/messaging/messaging-listeners';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { MessagingContribution } from '@theia/core/lib/node/messaging/messaging-contribution';
 import { MessagingService } from '@theia/core/lib/node/messaging/messaging-service';
-import * as http from 'http';
 import { Socket } from 'socket.io';
 import { RemoteSessionService } from './remote-session-service';
-import { RemoteProxySocketProvider } from './remote-proxy-socket-provider';
+import { RemoteConnectionSocketProvider } from './remote-connection-socket-provider';
+import { getCookies } from './remote-utils';
+import { remoteWsPath } from '../common/remote-types';
 
 @injectable()
-export class RemoteMessagingListenerContribution implements MessagingListenerContribution {
+export class RemoteRedirectContribution implements MessagingService.RedirectContribution {
 
     @inject(RemoteSessionService)
     protected readonly sessionService: RemoteSessionService;
 
-    @inject(RemoteProxySocketProvider)
-    protected readonly socketProvider: RemoteProxySocketProvider;
+    @inject(RemoteConnectionSocketProvider)
+    protected readonly socketProvider: RemoteConnectionSocketProvider;
 
     @inject(MessagingContribution)
     protected readonly messagingService: MessagingService;
 
     protected namespaceRegex = /^\/remote\/([^/]+)\/([^/]+)(\/.*)$/;
 
-    async onDidWebSocketUpgrade(_request: http.IncomingMessage, incomingSocket: Socket): Promise<void> {
-        const namespace = incomingSocket.nsp.name;
-        const regexMatches = this.namespaceRegex.exec(namespace);
-        if (regexMatches) {
-            const remoteId = regexMatches[1];
-            const sessionId = regexMatches[2];
-            const path = regexMatches[3];
+    async redirect(socket: Socket): Promise<boolean> {
+        // `remote-services` is the namespace for remote connection handling
+        // Connection handling is done on the local system
+        if (socket.nsp.name === remoteWsPath) {
+            return false;
+        }
+        const cookies = getCookies(socket.request);
+        const remoteId = cookies.remoteId;
+        if (!remoteId) {
+            return false;
+        }
+        try {
             const proxySession = await this.sessionService.getOrCreateProxySession({
-                remote: remoteId,
-                session: sessionId
+                remote: remoteId
             });
             const proxySocket = this.socketProvider.getProxySocket({
                 port: proxySession.port,
-                path
+                path: socket.nsp.name
             });
-            incomingSocket.addListener('disconnect', () => {
+            proxySession.onDidRemoteDisconnect(() => {
+                socket.disconnect(true);
+            });
+            socket.addListener('disconnect', () => {
                 proxySocket.close();
+                proxySession.dispose();
             });
-            proxySocket.on('disconnect', () => {
-                incomingSocket.disconnect(true);
+            proxySocket.onAny((event, ...args) => {
+                socket.emit(event, ...args);
             });
-            this.messagingService.ws(namespace, (_params, socket) => {
-                if (!proxySocket.connected) {
-                    proxySocket.connect();
-                }
-                proxySocket.onAny((event, ...args) => {
-                    socket.emit(event, ...args);
-                });
-                socket.onAny((event, ...args) => {
-                    proxySocket.emit(event, ...args);
-                });
+            socket.onAny((event, ...args) => {
+                proxySocket.emit(event, ...args);
             });
+            return true;
+        } catch {
+            // The remote session might no longer be valid
+            // We simply return false and continue normal operation
+            return false;
         }
-
     }
 }

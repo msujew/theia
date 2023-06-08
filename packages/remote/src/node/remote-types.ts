@@ -14,10 +14,8 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import type { Client } from 'ssh2';
-import { Disposable } from '@theia/core';
+import { Disposable, Emitter, Event } from '@theia/core';
 import * as net from 'net';
-import { Socket } from 'socket.io-client';
 
 export interface ExpressLayer {
     name: string
@@ -26,37 +24,44 @@ export interface ExpressLayer {
     path?: string
 }
 
-export interface RemoteConnection {
+export interface RemoteConnection extends Disposable {
     id: string;
-    client: Client;
-    server: net.Server
+    server: net.Server;
+    onDidDisconnect: Event<void>;
+    forwardOut(socket: net.Socket): void;
 }
 
 export interface RemoteSessionOptions {
     id: string;
     port: number;
-    onDispose: () => void;
 }
 
 export class RemoteSession implements Disposable {
 
-    private onDispose: () => void;
-
     readonly id: string;
     readonly port: number;
 
-    sockets: Socket[] = [];
+    private readonly onDidRemoteDisconnectEmitter = new Emitter<void>();
+    private readonly onDidSocketDisconnectEmitter = new Emitter<void>();
+
+    get onDidRemoteDisconnect(): Event<void> {
+        return this.onDidRemoteDisconnectEmitter.event;
+    }
+
+    get onDidSocketDisconnect(): Event<void> {
+        return this.onDidSocketDisconnectEmitter.event;
+    }
 
     constructor(options: RemoteSessionOptions) {
         this.port = options.port;
         this.id = options.id;
-        this.onDispose = this.onDispose;
+    }
+
+    disconnect(): void {
+        this.onDidRemoteDisconnectEmitter.fire();
     }
 
     dispose(): void {
-        for (const socket of this.sockets) {
-            socket.close();
-        }
-        this.onDispose();
+        this.onDidSocketDisconnectEmitter.fire();
     }
 }

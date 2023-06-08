@@ -14,20 +14,12 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import * as fs from 'fs';
-import * as os from 'os';
-import { Client, utils } from 'ssh2';
-import { RemoteConnectionInfo } from '../common/remote-types';
-import { inject, injectable } from '@theia/core/shared/inversify';
+import { injectable } from '@theia/core/shared/inversify';
 import { RemoteConnection } from './remote-types';
 import { nanoid } from 'nanoid';
-import { RemoteProxyServerProvider } from './remote-proxy-server-provider';
 
 @injectable()
 export class RemoteConnectionService {
-
-    @inject(RemoteProxyServerProvider)
-    protected readonly serverProvider: RemoteProxyServerProvider;
 
     protected readonly connections = new Map<string, RemoteConnection>();
 
@@ -35,44 +27,14 @@ export class RemoteConnectionService {
         return this.connections.get(id);
     }
 
-    async connect(connectionInfo: RemoteConnectionInfo): Promise<RemoteConnection> {
-        const sessionId = nanoid(10);
-        const sshClient = new Client();
-        const key = await fs.promises.readFile(os.homedir() + '/.ssh/id_rsa');
-        return new Promise(async (resolve, reject) => {
-            sshClient
-                .on('ready', async () => {
-                    const server = await this.serverProvider.getProxyServer(sshClient);
-                    const connection: RemoteConnection = {
-                        client: sshClient,
-                        id: sessionId,
-                        server
-                    };
-                    this.connections.set(sessionId, connection);
-                    resolve(connection);
-                    /* .on('keyboard-interactive', (name, instructions, lang, prompts, finish) => {
-                   console.log(`keybord request ${name} ${instructions} ${lang}`);
-                   }) */
-                }).on('error', err => {
-                    reject(err);
-                }).connect({
-                    debug: mes => console.debug(mes),
-                    host: connectionInfo.host,
-                    username: connectionInfo.user,
-                    tryKeyboard: true,
-                    authHandler: ['publickey', 'hostbased'],
-                    privateKey: key,
-                    passphrase: await this.getPassphrase(key),
-                });
-        });
+    getConnectionId(): string {
+        return nanoid(10);
     }
 
-    protected async getPassphrase(key: Buffer): Promise<string | undefined> {
-        const parsedKey = utils.parseKey(key);
-        if (parsedKey instanceof Error && parsedKey.message.includes('no passphrase given')) {
-            // somehow get the passphrase
-            return '';
-        }
-        return undefined;
+    register(connection: RemoteConnection): void {
+        connection.onDidDisconnect(() => {
+            this.connections.delete(connection.id);
+        });
+        this.connections.set(connection.id, connection);
     }
 }

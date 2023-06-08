@@ -15,8 +15,8 @@
 // *****************************************************************************
 
 import { Command, CommandContribution, CommandRegistry, QuickInputService } from '@theia/core';
-import { Endpoint, WebSocketConnectionProvider } from '@theia/core/lib/browser';
 import { inject, injectable } from '@theia/core/shared/inversify';
+import { RemoteSSHConnectionProvider } from '../common/remote-ssh-connection-provider';
 
 export namespace RemoteSSHCommands {
     export const CONNECT: Command = Command.toLocalizedCommand({
@@ -32,8 +32,8 @@ export class SSHFrontendContribution implements CommandContribution {
     @inject(QuickInputService)
     protected readonly quickInputService: QuickInputService;
 
-    @inject(WebSocketConnectionProvider)
-    protected readonly webSocketConnectionProvider: WebSocketConnectionProvider;
+    @inject(RemoteSSHConnectionProvider)
+    protected readonly sshConnectionProvider: RemoteSSHConnectionProvider;
 
     registerCommands(commands: CommandRegistry): void {
         commands.registerCommand(RemoteSSHCommands.CONNECT, {
@@ -70,15 +70,6 @@ export class SSHFrontendContribution implements CommandContribution {
     }
 
     async sendSSHConnect(host: string, user: string): Promise<string | undefined> {
-        const response = await fetch(new Endpoint({ path: '/ssh/connect' }).getRestUrl().toString(), {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ host, user })
-        });
-        if (response.status === 200) {
-            return response.text();
-        } else {
-            return undefined;
-        }
+        return this.sshConnectionProvider.establishConnection(host, user);
     }
 }

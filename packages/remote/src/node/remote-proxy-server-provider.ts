@@ -16,23 +16,16 @@
 
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import { injectable } from '@theia/core/shared/inversify';
-import type { Client } from 'ssh2';
 import * as net from 'net';
 
 @injectable()
 export class RemoteProxyServerProvider {
 
-    async getProxyServer(client: Client): Promise<net.Server> {
+    async getProxyServer(callback?: (socket: net.Socket) => void): Promise<net.Server> {
         const deferred = new Deferred();
 
         const proxy = net.createServer(socket => {
-            client.forwardOut(socket.localAddress!, socket.localPort!, '127.0.0.1', 3000, (err, stream) => {
-                if (err) {
-                    console.debug('Proxy message rejected', err);
-                } else {
-                    stream.pipe(socket).pipe(stream);
-                }
-            });
+            callback?.(socket);
         }).listen(0, () => {
             deferred.resolve();
         });

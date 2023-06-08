@@ -16,12 +16,16 @@
 
 import { CommandContribution } from '@theia/core';
 import { ContainerModule } from '@theia/core/shared/inversify';
-import { WebSocketConnectionPathProvider } from '@theia/core/lib/browser';
-import { RemoteWebSocketConnectionPathProvider } from './remote-connection-path-provider';
 import { SSHFrontendContribution } from './remote-frontend-contribution';
+import { RemoteSSHConnectionProvider, RemoteSSHConnectionProviderPath } from '../common/remote-ssh-connection-provider';
+import { RemoteWebSocketConnectionProvider } from './remote-ws-connection-provider';
 
 export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
     bind(SSHFrontendContribution).toSelf().inSingletonScope();
     bind(CommandContribution).to(SSHFrontendContribution);
-    rebind(WebSocketConnectionPathProvider).to(RemoteWebSocketConnectionPathProvider).inSingletonScope();
+    bind(RemoteWebSocketConnectionProvider).toSelf().inSingletonScope();
+    bind(RemoteSSHConnectionProvider).toDynamicValue(ctx => {
+        const connection = ctx.container.get(RemoteWebSocketConnectionProvider);
+        return connection.createProxy<RemoteSSHConnectionProvider>(RemoteSSHConnectionProviderPath);
+    }).inSingletonScope();
 });

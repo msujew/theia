@@ -14,19 +14,13 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { injectable } from '@theia/core/shared/inversify';
-import { io, Socket } from 'socket.io-client';
+import { WebSocketConnectionProvider } from '@theia/core/lib/browser';
+import { remoteWsPath } from '../common/remote-types';
 
-export interface RemoteProxySocketProviderOptions {
-    port: number;
-    path: string;
-}
+export class RemoteWebSocketConnectionProvider extends WebSocketConnectionProvider {
 
-@injectable()
-export class RemoteProxySocketProvider {
-
-    getProxySocket(options: RemoteProxySocketProviderOptions): Socket {
-        return io(`ws://localhost:${options.port}${options.path}`, { autoConnect: false });
+    protected override init(): void {
+        this.connect(remoteWsPath);
     }
 
 }

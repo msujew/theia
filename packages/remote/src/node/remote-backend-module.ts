@@ -15,23 +15,35 @@
 // *****************************************************************************
 
 import { ContainerModule } from '@theia/core/shared/inversify';
-import { BackendApplicationContribution } from '@theia/core/lib/node';
-import { RemoteBackenApplicationContribution } from './remote-backend-application-contribution';
+import { BackendApplicationContribution, MessagingService } from '@theia/core/lib/node';
+import { RemoteExpressProxyContribution } from './remote-express-proxy-contribution';
 import { RemoteConnectionService } from './remote-connection-service';
 import { RemoteProxyServerProvider } from './remote-proxy-server-provider';
-import { RemoteMessagingListenerContribution } from './remote-messaging-listener';
-import { MessagingListenerContribution } from '@theia/core/lib/node/messaging/messaging-listeners';
-import { RemoteProxySocketProvider } from './remote-proxy-socket-provider';
+import { RemoteRedirectContribution } from './remote-redirect-contribution';
+import { RemoteConnectionSocketProvider } from './remote-connection-socket-provider';
 import { RemoteSessionService } from './remote-session-service';
+import { ConnectionContainerModule } from '@theia/core/lib/node/messaging/connection-container-module';
+import { RemoteSSHConnectionProvider, RemoteSSHConnectionProviderPath } from '../common/remote-ssh-connection-provider';
+import { RemoteSSHConnectionProviderImpl } from './ssh/remote-ssh-connection-provider';
+import { SSHIdentityFileCollector } from './ssh/ssh-identity-file-collector';
+
+export const remoteConnectionModule = ConnectionContainerModule.create(({ bind, bindBackendService }) => {
+    bind(RemoteSSHConnectionProviderImpl).toSelf().inSingletonScope();
+    bind(RemoteSSHConnectionProvider).toService(RemoteSSHConnectionProviderImpl);
+    bindBackendService(RemoteSSHConnectionProviderPath, RemoteSSHConnectionProvider);
+});
 
 export default new ContainerModule(bind => {
     bind(RemoteProxyServerProvider).toSelf().inSingletonScope();
-    bind(RemoteProxySocketProvider).toSelf().inSingletonScope();
+    bind(RemoteConnectionSocketProvider).toSelf().inSingletonScope();
     bind(RemoteSessionService).toSelf().inSingletonScope();
     bind(RemoteConnectionService).toSelf().inSingletonScope();
-    bind(RemoteBackenApplicationContribution).toSelf().inSingletonScope();
-    bind(BackendApplicationContribution).to(RemoteBackenApplicationContribution);
+    bind(RemoteExpressProxyContribution).toSelf().inSingletonScope();
+    bind(BackendApplicationContribution).toService(RemoteExpressProxyContribution);
 
-    bind(RemoteMessagingListenerContribution).toSelf().inSingletonScope();
-    bind(MessagingListenerContribution).toService(RemoteMessagingListenerContribution);
+    bind(RemoteRedirectContribution).toSelf().inSingletonScope();
+    bind(MessagingService.RedirectContribution).toService(RemoteRedirectContribution);
+    bind(ConnectionContainerModule).toConstantValue(remoteConnectionModule);
+
+    bind(SSHIdentityFileCollector).toSelf().inSingletonScope();
 });

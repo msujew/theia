@@ -16,13 +16,13 @@
 
 import { inject, injectable } from '@theia/core/shared/inversify';
 import * as net from 'net';
+import { v4 } from 'uuid';
 import { RemoteConnectionService } from './remote-connection-service';
 import { RemoteProxyServerProvider } from './remote-proxy-server-provider';
 import { RemoteSession } from './remote-types';
 
 export interface RemoteProxySessionOptions {
     remote: string;
-    session: string;
 }
 
 @injectable()
@@ -37,24 +37,26 @@ export class RemoteSessionService {
     protected readonly sessions = new Map<string, RemoteSession>();
 
     async getOrCreateProxySession(options: RemoteProxySessionOptions): Promise<RemoteSession> {
-        let session = this.sessions.get(options.session);
-        if (!session) {
-            const connection = this.connectionService.getConnection(options.remote);
-            if (!connection) {
-                throw new Error('No remote connection found for id ' + options.remote);
-            }
-            const server = await this.serverProvider.getProxyServer(connection.client);
-            const port = (server.address() as net.AddressInfo).port;
-            session = new RemoteSession({
-                id: options.session,
-                port,
-                onDispose: () => {
-                    server.close();
-                    this.sessions.delete(options.session);
-                }
-            });
-            this.sessions.set(options.session, session);
+        const connection = this.connectionService.getConnection(options.remote);
+        if (!connection) {
+            throw new Error('No remote connection found for id ' + options.remote);
         }
+        const server = await this.serverProvider.getProxyServer(socket => connection.forwardOut(socket));
+        const port = (server.address() as net.AddressInfo).port;
+        const sessionId = v4();
+        const session = new RemoteSession({
+            id: sessionId,
+            port
+        });
+        // When the frontend socket disconnects, close the server and delete the session
+        session.onDidSocketDisconnect(() => {
+            server.close();
+            this.sessions.delete(sessionId);
+        });
+        connection.onDidDisconnect(() => {
+            session?.disconnect();
+        });
+        this.sessions.set(sessionId, session);
         return session;
     }
 

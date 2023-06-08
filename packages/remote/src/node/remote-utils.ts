@@ -14,30 +14,19 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { WebSocketConnectionPathProvider } from '@theia/core/lib/browser';
-import { injectable } from '@theia/core/shared/inversify';
-import { v4 } from 'uuid';
+import * as http from 'http';
 
-@injectable()
-export class RemoteWebSocketConnectionPathProvider extends WebSocketConnectionPathProvider {
-
-    protected remoteId = this.getRemoteId();
-    protected sessionId = v4();
-
-    override getConnectionPath(connectionPath: string): string {
-        if (this.remoteId) {
-            return `/remote/${this.remoteId}/${this.sessionId}${connectionPath}`;
-        } else {
-            return super.getConnectionPath(connectionPath);
+export function getCookies(request: http.IncomingMessage): Record<string, string | undefined> {
+    const cookieHeader = request.headers.cookie;
+    const record: Record<string, string | undefined> = {};
+    if (cookieHeader) {
+        const cookies = cookieHeader.split('; ');
+        for (const cookie of cookies) {
+            const index = cookie.indexOf('=');
+            const name = cookie.substring(0, index);
+            const value = cookie.substring(index + 1);
+            record[name] = value;
         }
     }
-
-    protected getRemoteId(): string | undefined {
-        const remoteId = document.cookie
-            .split('; ')
-            .find(row => row.startsWith('remoteId='))
-            ?.split('=')[1];
-        return remoteId;
-    }
-
+    return record;
 }

@@ -70,6 +70,6 @@ export async function preload(): Promise<void> {
     await Promise.allSettled([
         loadTranslations(),
         loadBackendOS(),
-        initBackground(),
+        initBackground()
     ]);
 }

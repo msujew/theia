@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { injectable, interfaces, decorate, unmanaged, postConstruct, inject } from 'inversify';
+import { injectable, interfaces, decorate, unmanaged, postConstruct } from 'inversify';
 import { JsonRpcProxyFactory, JsonRpcProxy, Emitter, Event, Channel } from '../../common';
 import { Endpoint } from '../endpoint';
 import { AbstractConnectionProvider } from '../../common/messaging/abstract-connection-provider';
@@ -32,19 +32,7 @@ export interface WebSocketOptions {
 }
 
 @injectable()
-export class WebSocketConnectionPathProvider {
-
-    getConnectionPath(connectionPath: string): string {
-        return connectionPath;
-    }
-
-}
-
-@injectable()
 export class WebSocketConnectionProvider extends AbstractConnectionProvider<WebSocketOptions> {
-
-    @inject(WebSocketConnectionPathProvider)
-    protected readonly connectionPathProvider: WebSocketConnectionPathProvider;
 
     protected readonly onSocketDidOpenEmitter: Emitter<void> = new Emitter();
     get onSocketDidOpen(): Event<void> {
@@ -116,7 +104,7 @@ export class WebSocketConnectionProvider extends AbstractConnectionProvider<WebS
     }
 
     protected connect(path: string = WebSocketChannel.wsPath): void {
-        const url = this.createWebSocketUrl(this.connectionPathProvider.getConnectionPath(path));
+        const url = this.createWebSocketUrl(path);
         this.socket = this.createWebSocket(url);
         this.socket.on('connect', () => {
             this.initializeMultiplexer();
