@@ -16,20 +16,43 @@
 
 import * as express from '@theia/core/shared/express';
 import { BackendApplicationContribution } from '@theia/core/lib/node';
-import { injectable } from '@theia/core/shared/inversify';
+import { inject, injectable } from '@theia/core/shared/inversify';
 import { ExpressLayer, RemoteConnection } from './remote-types';
 import { AddressInfo } from 'net';
 import expressHttpProxy = require('express-http-proxy');
 import { getCookies } from './remote-utils';
 import { Disposable } from '@theia/core';
+import { RemoteConnectionService } from './remote-connection-service';
 
 @injectable()
 export class RemoteExpressProxyContribution implements BackendApplicationContribution {
+
+    @inject(RemoteConnectionService)
+    protected remoteConnectionService: RemoteConnectionService;
 
     protected app: express.Application;
 
     configure(app: express.Application): void {
         this.app = app;
+        app.get('/remote/status', (req, res) => {
+            const cookies = getCookies(req);
+            const remoteId = cookies.remoteId;
+            if (remoteId) {
+                const remote = this.remoteConnectionService.getConnection(remoteId);
+                if (remote) {
+                    res.send({
+                        alive: true,
+                        name: remote.name,
+                        type: remote.type
+                    });
+                    return;
+                }
+            }
+            res.send({
+                alive: false
+            });
+        });
+        this.spliceRouter(this.app, router => router.name === 'serveStatic' ? 0 : undefined);
     }
 
     setupProxyRouter(remote: RemoteConnection): Disposable {
@@ -42,7 +65,7 @@ export class RemoteExpressProxyContribution implements BackendApplicationContrib
             }
         });
         this.app.use(handleProxy);
-        return this.spliceRouter(this.app, router => router.name === 'serveStatic' ? 0 : undefined);
+        return this.spliceRouter(this.app, router => router.name === 'serveStatic' ? 1 : undefined);
     }
 
     protected spliceRouter(app: express.Application, position: (router: ExpressLayer) => number | undefined): Disposable {

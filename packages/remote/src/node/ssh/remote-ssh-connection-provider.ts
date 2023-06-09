@@ -40,7 +40,7 @@ export class RemoteSSHConnectionProviderImpl implements RemoteSSHConnectionProvi
     protected readonly identityFileCollector: SSHIdentityFileCollector;
 
     @inject(RemoteExpressProxyContribution)
-    protected readonly remoteBackenApplicationContribution: RemoteExpressProxyContribution;
+    protected readonly remoteExpressProxy: RemoteExpressProxyContribution;
 
     @inject(QuickInputService)
     protected readonly quickInputService: QuickInputService;
@@ -50,26 +50,31 @@ export class RemoteSSHConnectionProviderImpl implements RemoteSSHConnectionProvi
 
     async establishConnection(host: string, user: string): Promise<string> {
         const remote = await this.establishSSHConnection(host, user);
-        this.remoteConnectionService.register(remote);
-        this.remoteBackenApplicationContribution.setupProxyRouter(remote);
+        const registration = this.remoteConnectionService.register(remote);
+        const proxyRouter = this.remoteExpressProxy.setupProxyRouter(remote);
+        remote.onDidDisconnect(() => {
+            proxyRouter.dispose();
+            registration.dispose();
+        });
         return remote.id;
     }
 
-    async establishSSHConnection(host: string, user: string): Promise<RemoteConnection> {
-        const deferred = new Deferred<RemoteConnection>();
+    async establishSSHConnection(host: string, user: string): Promise<RemoteSSHConnection> {
+        const deferred = new Deferred<RemoteSSHConnection>();
         const sessionId = this.remoteConnectionService.getConnectionId();
         const sshClient = new ssh2.Client();
         const identityFiles = await this.identityFileCollector.gatherIdentityFiles();
         const sshAuthHandler = this.getAuthHandler(user, host, identityFiles);
         sshClient
             .on('ready', async () => {
-                console.log('Connected to ssh host');
                 const server = await this.serverProvider.getProxyServer(socket => {
                     connection.forwardOut(socket);
                 });
                 const connection = new RemoteSSHConnection({
                     client: sshClient,
                     id: sessionId,
+                    name: host,
+                    type: 'SSH',
                     server
                 });
                 deferred.resolve(connection);
@@ -93,8 +98,6 @@ export class RemoteSSHConnectionProviderImpl implements RemoteSSHConnectionProvi
         const NEXT_AUTH = null as unknown as ssh2.AuthenticationType;
         return async (methodsLeft: string[] | null, _partialSuccess: boolean | null, callback: ssh2.NextAuthHandler) => {
             if (!methodsLeft) {
-                console.log('Trying no-auth authentication');
-
                 return callback({
                     type: 'none',
                     username: user,
@@ -102,8 +105,6 @@ export class RemoteSSHConnectionProviderImpl implements RemoteSSHConnectionProvi
             }
             if (methodsLeft && methodsLeft.includes('publickey') && identityKeys.length) {
                 const identityKey = identityKeys.shift()!;
-                console.log(`Trying publickey authentication: ${identityKey.filename} ${identityKey.parsedKey.type} SHA256:${identityKey.fingerprint}`);
-
                 if (identityKey.isPrivate) {
                     return callback({
                         type: 'publickey',
@@ -145,10 +146,6 @@ export class RemoteSSHConnectionProviderImpl implements RemoteSSHConnectionProvi
                 });
             }
             if (methodsLeft && methodsLeft.includes('password') && passwordRetryCount > 0) {
-                if (passwordRetryCount === this.passwordRetryCount) {
-                    console.log('Trying password authentication');
-                }
-
                 const password = await this.quickInputService.input({
                     title: `Enter password for ${user}@${host}`,
                     password: true
@@ -164,10 +161,6 @@ export class RemoteSSHConnectionProviderImpl implements RemoteSSHConnectionProvi
                     : END_AUTH);
             }
             if (methodsLeft && methodsLeft.includes('keyboard-interactive') && keyboardRetryCount > 0) {
-                if (keyboardRetryCount === this.passwordRetryCount) {
-                    console.log('Trying keyboard-interactive authentication');
-                }
-
                 return callback({
                     type: 'keyboard-interactive',
                     username: user,
@@ -202,6 +195,8 @@ export class RemoteSSHConnectionProviderImpl implements RemoteSSHConnectionProvi
 
 export interface RemoteSSHConnectionOptions {
     id: string;
+    name: string;
+    type: string;
     client: ssh2.Client;
     server: net.Server;
 }
@@ -209,6 +204,8 @@ export interface RemoteSSHConnectionOptions {
 export class RemoteSSHConnection implements RemoteConnection {
 
     id: string;
+    name: string;
+    type: string;
     client: ssh2.Client;
     server: net.Server;
 
@@ -220,6 +217,8 @@ export class RemoteSSHConnection implements RemoteConnection {
 
     constructor(options: RemoteSSHConnectionOptions) {
         this.id = options.id;
+        this.type = options.type;
+        this.name = options.name;
         this.client = options.client;
         this.server = options.server;
         this.onDidDisconnect(() => this.dispose());

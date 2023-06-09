@@ -26,6 +26,8 @@ export interface ExpressLayer {
 
 export interface RemoteConnection extends Disposable {
     id: string;
+    name: string;
+    type: string;
     server: net.Server;
     onDidDisconnect: Event<void>;
     forwardOut(socket: net.Socket): void;

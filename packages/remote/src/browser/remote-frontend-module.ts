@@ -14,15 +14,23 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { CommandContribution } from '@theia/core';
+import { bindContributionProvider, CommandContribution } from '@theia/core';
 import { ContainerModule } from '@theia/core/shared/inversify';
-import { WebSocketConnectionProvider } from '@theia/core/lib/browser';
-import { SSHFrontendContribution } from './remote-frontend-contribution';
+import { FrontendApplicationContribution, WebSocketConnectionProvider } from '@theia/core/lib/browser';
+import { RemoteSSHContribution } from './remote-ssh-contribution';
 import { RemoteSSHConnectionProvider, RemoteSSHConnectionProviderPath } from '../common/remote-ssh-connection-provider';
+import { RemoteFrontendContribution } from './remote-frontend-contribution';
+import { RemoteRegistryContribution } from './remote-registry-contribution';
 
-export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
-    bind(SSHFrontendContribution).toSelf().inSingletonScope();
-    bind(CommandContribution).to(SSHFrontendContribution);
+export default new ContainerModule(bind => {
+    bind(RemoteFrontendContribution).toSelf().inSingletonScope();
+    bind(FrontendApplicationContribution).toService(RemoteFrontendContribution);
+    bind(CommandContribution).toService(RemoteFrontendContribution);
+
+    bindContributionProvider(bind, RemoteRegistryContribution);
+    bind(RemoteSSHContribution).toSelf().inSingletonScope();
+    bind(RemoteRegistryContribution).toService(RemoteSSHContribution);
+
     bind(RemoteSSHConnectionProvider).toDynamicValue(ctx => {
         const connection = ctx.container.get(WebSocketConnectionProvider);
         return connection.createProxy<RemoteSSHConnectionProvider>(RemoteSSHConnectionProviderPath);

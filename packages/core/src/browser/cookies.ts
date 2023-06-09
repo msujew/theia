@@ -14,21 +14,11 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
-export const REMOTE_ID = 'remoteId';
-
-export interface RemoteSSHConnectionOptions {
-    user?: string;
-    host?: string;
-}
-
-export type RemoteStatus = RemoteConnectedStatus | RemoteDisconnectedStatus;
-
-export interface RemoteDisconnectedStatus {
-    alive: false;
-}
-
-export interface RemoteConnectedStatus {
-    alive: true;
-    type: string;
-    name: string;
+export namespace Cookies {
+    export function remove(name: string): void {
+        document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:01 GMT`;
+    }
+    export function set(name: string, value: string): void {
+        document.cookie = `${name}=${value}`;
+    }
 }

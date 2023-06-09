@@ -17,6 +17,7 @@
 import { injectable } from '@theia/core/shared/inversify';
 import { RemoteConnection } from './remote-types';
 import { nanoid } from 'nanoid';
+import { Disposable } from '@theia/core';
 
 @injectable()
 export class RemoteConnectionService {
@@ -31,10 +32,10 @@ export class RemoteConnectionService {
         return nanoid(10);
     }
 
-    register(connection: RemoteConnection): void {
-        connection.onDidDisconnect(() => {
+    register(connection: RemoteConnection): Disposable {
+        this.connections.set(connection.id, connection);
+        return Disposable.create(() => {
             this.connections.delete(connection.id);
         });
-        this.connections.set(connection.id, connection);
     }
 }
