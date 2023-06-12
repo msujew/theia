@@ -16,13 +16,14 @@
 
 import { bindContributionProvider, CommandContribution } from '@theia/core';
 import { ContainerModule } from '@theia/core/shared/inversify';
-import { FrontendApplicationContribution, WebSocketConnectionProvider } from '@theia/core/lib/browser';
+import { FrontendApplicationContribution, RemoteService, WebSocketConnectionProvider } from '@theia/core/lib/browser';
 import { RemoteSSHContribution } from './remote-ssh-contribution';
 import { RemoteSSHConnectionProvider, RemoteSSHConnectionProviderPath } from '../common/remote-ssh-connection-provider';
 import { RemoteFrontendContribution } from './remote-frontend-contribution';
 import { RemoteRegistryContribution } from './remote-registry-contribution';
+import { RemoteServiceImpl } from './remote-service-impl';
 
-export default new ContainerModule(bind => {
+export default new ContainerModule((bind, _, __, rebind) => {
     bind(RemoteFrontendContribution).toSelf().inSingletonScope();
     bind(FrontendApplicationContribution).toService(RemoteFrontendContribution);
     bind(CommandContribution).toService(RemoteFrontendContribution);
@@ -30,6 +31,9 @@ export default new ContainerModule(bind => {
     bindContributionProvider(bind, RemoteRegistryContribution);
     bind(RemoteSSHContribution).toSelf().inSingletonScope();
     bind(RemoteRegistryContribution).toService(RemoteSSHContribution);
+
+    bind(RemoteServiceImpl).toSelf().inSingletonScope();
+    rebind(RemoteService).toService(RemoteServiceImpl);
 
     bind(RemoteSSHConnectionProvider).toDynamicValue(ctx => {
         const connection = ctx.container.get(WebSocketConnectionProvider);

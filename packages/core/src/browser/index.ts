@@ -45,3 +45,4 @@ export * from './decoration-style';
 export * from './styling-service';
 export * from './hover-service';
 export * from './cookies';
+export * from './remote-service';

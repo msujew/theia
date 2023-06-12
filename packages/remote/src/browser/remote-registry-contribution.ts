@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { Command, CommandHandler, Emitter, Event } from '@theia/core';
-import { Cookies } from '@theia/core/lib/browser';
+import { CookieService } from '@theia/core/lib/browser';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { WindowService } from '@theia/core/lib/browser/window/window-service';
 import { REMOTE_ID } from '../common/remote-types';
@@ -32,10 +32,13 @@ export abstract class AbstractRemoteRegistryContribution implements RemoteRegist
     @inject(WindowService)
     protected readonly windowService: WindowService;
 
+    @inject(CookieService)
+    protected readonly cookieService: CookieService;
+
     abstract registerRemoteCommands(registry: RemoteRegistry): void;
 
     protected openRemote(remoteId: string, newWindow: boolean): void {
-        Cookies.set(REMOTE_ID, remoteId);
+        this.cookieService.set(REMOTE_ID, remoteId);
         if (newWindow) {
             this.windowService.openNewDefaultWindow();
         } else {

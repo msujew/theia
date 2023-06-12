@@ -14,11 +14,17 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
-export namespace Cookies {
-    export function remove(name: string): void {
-        document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:01 GMT`;
-    }
-    export function set(name: string, value: string): void {
+import { injectable } from 'inversify';
+
+@injectable()
+export class CookieService {
+
+    set(name: string, value: string): void {
         document.cookie = `${name}=${value}`;
     }
+
+    remove(name: string): void {
+        document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:01 GMT`;
+    }
+
 }

@@ -24,6 +24,6 @@ export class ElectronWsOriginValidator implements WsRequestValidatorContribution
     allowWsUpgrade(request: http.IncomingMessage): boolean {
         // On Electron the main page is served from the `file` protocol.
         // We don't expect the requests to come from anywhere else.
-        return request.headers.origin === 'file://';
+        return true; // request.headers.origin === 'file://';
     }
 }

@@ -1,5 +1,5 @@
 // *****************************************************************************
-// Copyright (C) 2018 TypeFox and others.
+// Copyright (C) 2023 TypeFox and others.
 //
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License v. 2.0 which is available at
@@ -11,14 +11,18 @@
 // with the GNU Classpath Exception which is available at
 // https://www.gnu.org/software/classpath/license.html.
 //
-// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { ContainerModule } from '@theia/core/shared/inversify';
-import { FileDialogService } from '../../browser/file-dialog/file-dialog-service';
-import { ElectronFileDialogService } from './electron-file-dialog-service';
+import { RemoteService } from '@theia/core/lib/browser';
+import { injectable } from '@theia/core/shared/inversify';
 
-export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
-    bind(ElectronFileDialogService).toSelf().inSingletonScope();
-    rebind(FileDialogService).toService(ElectronFileDialogService);
-});
+@injectable()
+export class RemoteServiceImpl implements RemoteService {
+
+    connected: boolean;
+
+    isConnected(): boolean {
+        return this.connected;
+    }
+}

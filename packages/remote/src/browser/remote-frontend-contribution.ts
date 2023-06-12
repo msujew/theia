@@ -15,10 +15,11 @@
 // *****************************************************************************
 
 import { Command, CommandContribution, CommandRegistry, ContributionProvider, nls, QuickInputService, QuickPickInput } from '@theia/core';
-import { Cookies, Endpoint, FrontendApplicationContribution, StatusBar, StatusBarAlignment, StatusBarEntry } from '@theia/core/lib/browser';
+import { CookieService, Endpoint, FrontendApplicationContribution, StatusBar, StatusBarAlignment, StatusBarEntry } from '@theia/core/lib/browser';
 import { inject, injectable, named, optional } from '@theia/core/shared/inversify';
 import { RemoteStatus, REMOTE_ID } from '../common/remote-types';
 import { RemoteRegistry, RemoteRegistryContribution } from './remote-registry-contribution';
+import { RemoteServiceImpl } from './remote-service-impl';
 
 export namespace RemoteCommands {
     export const REMOTE_SELECT: Command = {
@@ -36,16 +37,21 @@ export class RemoteFrontendContribution implements CommandContribution, Frontend
     @inject(StatusBar)
     protected readonly statusBar: StatusBar;
 
+    @inject(CookieService)
+    protected readonly cookieService: CookieService;
+
     @inject(QuickInputService) @optional()
     protected readonly quickInputService?: QuickInputService;
 
     @inject(CommandRegistry)
     protected readonly commandRegistry: CommandRegistry;
 
+    @inject(RemoteServiceImpl)
+    protected readonly remoteService: RemoteServiceImpl;
+
     @inject(ContributionProvider) @named(RemoteRegistryContribution)
     protected readonly remoteRegistryContributions: ContributionProvider<RemoteRegistryContribution>;
 
-    protected isConnected = false;
     protected remoteRegistry = new RemoteRegistry();
 
     async configure(): Promise<void> {
@@ -55,7 +61,7 @@ export class RemoteFrontendContribution implements CommandContribution, Frontend
     }
 
     protected async setStatusBar(info: RemoteStatus): Promise<void> {
-        this.isConnected = info.alive;
+        this.remoteService.connected = info.alive;
         const entry: StatusBarEntry = {
             alignment: StatusBarAlignment.LEFT,
             command: RemoteCommands.REMOTE_SELECT.id,
@@ -77,7 +83,7 @@ export class RemoteFrontendContribution implements CommandContribution, Frontend
     registerCommands(commands: CommandRegistry): void {
         this.remoteRegistry.onDidRegisterCommand(([command, handler]) => {
             commands.registerCommand(command, handler && {
-                isEnabled: () => !this.isConnected,
+                isEnabled: () => !this.remoteService.isConnected(),
                 ...handler
             });
         });
@@ -93,12 +99,12 @@ export class RemoteFrontendContribution implements CommandContribution, Frontend
     }
 
     protected disconnectRemote(): void {
-        Cookies.remove(REMOTE_ID);
+        this.cookieService.remove(REMOTE_ID);
         window.location.reload();
     }
 
     protected async selectRemote(): Promise<void> {
-        const commands = this.isConnected
+        const commands = this.remoteService.isConnected()
             ? [RemoteCommands.REMOTE_DISCONNECT]
             : this.remoteRegistry.commands;
         const quickPicks: QuickPickInput[] = [];

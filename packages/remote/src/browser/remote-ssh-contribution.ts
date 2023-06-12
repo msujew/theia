@@ -26,7 +26,7 @@ export namespace RemoteSSHCommands {
         label: 'Connect to Host...',
     }, 'theia/remoteSSH/connect');
     export const CONNECT_CURRENT_WINDOW: Command = Command.toLocalizedCommand({
-        id: 'remote.ssh.connect',
+        id: 'remote.ssh.connectCurrentWindow',
         category: 'SSH',
         label: 'Connect Current Window to Host...',
     }, 'theia/remoteSSH/connect');
