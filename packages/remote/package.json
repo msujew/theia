@@ -18,6 +18,9 @@
     {
       "frontend": "lib/browser/remote-frontend-module",
       "backend": "lib/node/remote-backend-module"
+    },
+    {
+      "backendElectron": "lib/electron-node/remote-electron-backend-module"
     }
   ],
   "keywords": [
