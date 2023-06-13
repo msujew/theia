@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { Command, QuickInputService } from '@theia/core';
+import { Command, MessageService, nls, QuickInputService } from '@theia/core';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { RemoteSSHConnectionProvider } from '../common/remote-ssh-connection-provider';
 import { AbstractRemoteRegistryContribution, RemoteRegistry } from './remote-registry-contribution';
@@ -41,6 +41,9 @@ export class RemoteSSHContribution extends AbstractRemoteRegistryContribution {
     @inject(RemoteSSHConnectionProvider)
     protected readonly sshConnectionProvider: RemoteSSHConnectionProvider;
 
+    @inject(MessageService)
+    protected readonly messageService: MessageService;
+
     registerRemoteCommands(registry: RemoteRegistry): void {
         registry.registerCommand(RemoteSSHCommands.CONNECT, {
             execute: () => this.connect(true)
@@ -63,8 +66,12 @@ export class RemoteSSHContribution extends AbstractRemoteRegistryContribution {
             user = await this.requestQuickInput('user');
         }
 
-        const remoteId = await this.sendSSHConnect(host!, user!);
-        this.openRemote(remoteId, newWindow);
+        try {
+            const remoteId = await this.sendSSHConnect(host!, user!);
+            this.openRemote(remoteId, newWindow);
+        } catch (err) {
+            this.messageService.error(`${nls.localize('theia/remote/sshFailure', 'Could not open SSH connection to remote.')} ${String(err)}`);
+        }
     }
 
     async requestQuickInput(prompt: string): Promise<string | undefined> {
