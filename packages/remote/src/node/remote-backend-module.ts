@@ -11,7 +11,7 @@
 // with the GNU Classpath Exception which is available at
 // https://www.gnu.org/software/classpath/license.html.
 //
-// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
 import { ContainerModule } from '@theia/core/shared/inversify';
@@ -26,6 +26,7 @@ import { ConnectionContainerModule } from '@theia/core/lib/node/messaging/connec
 import { RemoteSSHConnectionProvider, RemoteSSHConnectionProviderPath } from '../common/remote-ssh-connection-provider';
 import { RemoteSSHConnectionProviderImpl } from './ssh/remote-ssh-connection-provider';
 import { SSHIdentityFileCollector } from './ssh/ssh-identity-file-collector';
+import { RemoteCopyService } from './remote-copy-service';
 
 export const remoteConnectionModule = ConnectionContainerModule.create(({ bind, bindBackendService }) => {
     bind(RemoteSSHConnectionProviderImpl).toSelf().inSingletonScope();
@@ -34,6 +35,7 @@ export const remoteConnectionModule = ConnectionContainerModule.create(({ bind, 
 });
 
 export default new ContainerModule(bind => {
+    bind(RemoteCopyService).toSelf().inSingletonScope();
     bind(RemoteProxyServerProvider).toSelf().inSingletonScope();
     bind(RemoteConnectionSocketProvider).toSelf().inSingletonScope();
     bind(RemoteSessionService).toSelf().inSingletonScope();

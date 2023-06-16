@@ -11,7 +11,7 @@
 // with the GNU Classpath Exception which is available at
 // https://www.gnu.org/software/classpath/license.html.
 //
-// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
 import * as fs from '@theia/core/shared/fs-extra';
@@ -21,8 +21,9 @@ import { RemoteSSHConnectionProvider } from '../../common/remote-ssh-connection-
 import { RemoteExpressProxyContribution } from '../remote-express-proxy-contribution';
 import { RemoteConnectionService } from '../remote-connection-service';
 import { RemoteProxyServerProvider } from '../remote-proxy-server-provider';
-import { RemoteConnection } from '../remote-types';
+import { RemoteConnection, RemoteCopyOptions, RemoteExecOptions, RemoteExecResult, RemoteExecTester } from '../remote-types';
 import * as ssh2 from 'ssh2';
+import SftpClient = require('ssh2-sftp-client');
 import * as net from 'net';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import { SSHIdentityFileCollector, SSHKey } from './ssh-identity-file-collector';
@@ -209,6 +210,8 @@ export class RemoteSSHConnection implements RemoteConnection {
     client: ssh2.Client;
     server: net.Server;
 
+    private sftpClientPromise: Promise<SftpClient>;
+
     private readonly onDidDisconnectEmitter = new Emitter<void>();
 
     get onDidDisconnect(): Event<void> {
@@ -225,6 +228,18 @@ export class RemoteSSHConnection implements RemoteConnection {
         this.client.on('end', () => {
             this.onDidDisconnectEmitter.fire();
         });
+        this.sftpClientPromise = this.setupSftpClient();
+    }
+
+    protected async setupSftpClient(): Promise<SftpClient> {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const sftpClient = new SftpClient() as any;
+        // A hack to set the internal ssh2 client of the sftp client
+        // That way, we don't have to create a second connection
+        sftpClient.client = this.client;
+        // Calling this function establishes the sftp connection on the ssh client
+        await sftpClient.getSftpChannel();
+        return sftpClient;
     }
 
     forwardOut(socket: net.Socket): void {
@@ -235,6 +250,71 @@ export class RemoteSSHConnection implements RemoteConnection {
                 stream.pipe(socket).pipe(stream);
             }
         });
+    }
+
+    async copy(localPath: string, remotePath: string, options?: RemoteCopyOptions): Promise<void> {
+        const sftpClient = await this.sftpClientPromise;
+        await sftpClient.put(localPath, remotePath, {
+            writeStreamOptions: {
+                mode: options?.chmod,
+                encoding: options?.encoding
+            }
+        });
+        console.log(`Copied ${localPath} to ${remotePath}!`);
+    }
+
+    exec(cmd: string, args?: string[], options: RemoteExecOptions = {}): Promise<RemoteExecResult> {
+        const deferred = new Deferred<RemoteExecResult>();
+        cmd += (Array.isArray(args) ? (' ' + args.join(' ')) : '');
+        this.client.exec(cmd, options, (err, stream) => {
+            if (err) {
+                return deferred.reject(err);
+            }
+            let stdout = '';
+            let stderr = '';
+            stream.on('close', () => {
+                deferred.resolve({ stdout, stderr });
+            }).on('data', (data: Buffer | string) => {
+                stdout += data.toString();
+            }).stderr.on('data', (data: Buffer | string) => {
+                stderr += data.toString();
+            });
+        });
+        return deferred.promise;
+    }
+
+    execPartial(cmd: string, tester: RemoteExecTester, args?: string[], options: RemoteExecOptions = {}): Promise<RemoteExecResult> {
+        const deferred = new Deferred<RemoteExecResult>();
+        cmd += (Array.isArray(args) ? (' ' + args.join(' ')) : '');
+        this.client.exec(cmd, options, (err, stream) => {
+            if (err) {
+                return deferred.reject(err);
+            }
+            let stdout = '';
+            let stderr = '';
+            stream.on('close', () => {
+                if (deferred.state === 'unresolved') {
+                    deferred.resolve({ stdout, stderr });
+                }
+            }).on('data', (data: Buffer | string) => {
+                if (deferred.state === 'unresolved') {
+                    stdout += data.toString();
+
+                    if (tester(stdout, stderr)) {
+                        deferred.resolve({ stdout, stderr });
+                    }
+                }
+            }).stderr.on('data', (data: Buffer | string) => {
+                if (deferred.state === 'unresolved') {
+                    stderr += data.toString();
+
+                    if (tester(stdout, stderr)) {
+                        deferred.resolve({ stdout, stderr });
+                    }
+                }
+            });
+        });
+        return deferred.promise;
     }
 
     dispose(): void {

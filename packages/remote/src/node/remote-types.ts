@@ -11,7 +11,7 @@
 // with the GNU Classpath Exception which is available at
 // https://www.gnu.org/software/classpath/license.html.
 //
-// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+// SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
 import { Disposable, Emitter, Event } from '@theia/core';
@@ -24,6 +24,22 @@ export interface ExpressLayer {
     path?: string
 }
 
+export interface RemoteExecOptions {
+    env?: NodeJS.ProcessEnv;
+}
+
+export interface RemoteExecResult {
+    stdout: string;
+    stderr: string;
+}
+
+export interface RemoteCopyOptions {
+    encoding?: string;
+    chmod?: number;
+}
+
+export type RemoteExecTester = (stdout: string, stderr: string) => boolean;
+
 export interface RemoteConnection extends Disposable {
     id: string;
     name: string;
@@ -31,6 +47,9 @@ export interface RemoteConnection extends Disposable {
     server: net.Server;
     onDidDisconnect: Event<void>;
     forwardOut(socket: net.Socket): void;
+    exec(cmd: string, args: string[], options?: RemoteExecOptions): Promise<RemoteExecResult>;
+    execPartial(cmd: string, tester: RemoteExecTester, args: string[], options?: RemoteExecOptions): Promise<RemoteExecResult>;
+    copy(localPath: string, remotePath: string, options?: RemoteCopyOptions): Promise<void>;
 }
 
 export interface RemoteSessionOptions {
