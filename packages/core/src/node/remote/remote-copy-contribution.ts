@@ -17,13 +17,13 @@
 import { ApplicationPackage } from '@theia/application-package';
 import { inject, injectable } from 'inversify';
 import { glob as globCallback } from 'glob';
-import { promisify } from 'util';
 import { MaybePromise } from '../../common';
+import { promisify } from 'util';
 import * as path from 'path';
 
-const globPromise = promisify(globCallback);
+const promiseGlob = promisify(globCallback);
 
-export const RemoteCopyContribution = Symbol('RemoteCopyService');
+export const RemoteCopyContribution = Symbol('RemoteCopyContribution');
 
 export interface RemoteCopyContribution {
     copy(registry: RemoteCopyRegistry): MaybePromise<void>
@@ -53,9 +53,9 @@ export class RemoteCopyRegistry {
 
     async glob(pattern: string, target?: string): Promise<void> {
         const projectPath = this.applicationPackage.projectPath;
-        const globResult = await globPromise(pattern, {
+        const globResult = await promiseGlob(pattern, {
             cwd: projectPath
-        }) as string[];
+        });
         const relativeFiles = globResult.map(file => path.relative(projectPath, file));
         for (const file of relativeFiles) {
             const targetFile = this.withTarget(file, target);
@@ -76,7 +76,7 @@ export class RemoteCopyRegistry {
     }
 
     async directory(dir: string, target?: string): Promise<void> {
-        return this.glob(path.join(dir, '**'), target);
+        return this.glob(dir + '/**', target);
     }
 
     protected withTarget(file: string, target?: string): string {

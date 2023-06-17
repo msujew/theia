@@ -21,12 +21,13 @@ import { RemoteConnectionService } from './remote-connection-service';
 import { RemoteProxyServerProvider } from './remote-proxy-server-provider';
 import { RemoteRedirectContribution } from './remote-redirect-contribution';
 import { RemoteConnectionSocketProvider } from './remote-connection-socket-provider';
-import { RemoteSessionService } from './remote-session-service';
+import { RemoteTunnelService } from './remote-tunnel-service';
 import { ConnectionContainerModule } from '@theia/core/lib/node/messaging/connection-container-module';
 import { RemoteSSHConnectionProvider, RemoteSSHConnectionProviderPath } from '../common/remote-ssh-connection-provider';
 import { RemoteSSHConnectionProviderImpl } from './ssh/remote-ssh-connection-provider';
 import { SSHIdentityFileCollector } from './ssh/ssh-identity-file-collector';
 import { RemoteCopyService } from './remote-copy-service';
+import { RemoteSetupService } from './remote-setup-service';
 
 export const remoteConnectionModule = ConnectionContainerModule.create(({ bind, bindBackendService }) => {
     bind(RemoteSSHConnectionProviderImpl).toSelf().inSingletonScope();
@@ -36,9 +37,10 @@ export const remoteConnectionModule = ConnectionContainerModule.create(({ bind, 
 
 export default new ContainerModule(bind => {
     bind(RemoteCopyService).toSelf().inSingletonScope();
+    bind(RemoteSetupService).toSelf().inSingletonScope();
     bind(RemoteProxyServerProvider).toSelf().inSingletonScope();
     bind(RemoteConnectionSocketProvider).toSelf().inSingletonScope();
-    bind(RemoteSessionService).toSelf().inSingletonScope();
+    bind(RemoteTunnelService).toSelf().inSingletonScope();
     bind(RemoteConnectionService).toSelf().inSingletonScope();
     bind(RemoteExpressProxyContribution).toSelf().inSingletonScope();
     bind(BackendApplicationContribution).toService(RemoteExpressProxyContribution);

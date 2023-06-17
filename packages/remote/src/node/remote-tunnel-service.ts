@@ -16,17 +16,16 @@
 
 import { inject, injectable } from '@theia/core/shared/inversify';
 import * as net from 'net';
-import { v4 } from 'uuid';
 import { RemoteConnectionService } from './remote-connection-service';
 import { RemoteProxyServerProvider } from './remote-proxy-server-provider';
-import { RemoteSession } from './remote-types';
+import { RemoteTunnel } from './remote-types';
 
-export interface RemoteProxySessionOptions {
+export interface RemoteTunnelOptions {
     remote: string;
 }
 
 @injectable()
-export class RemoteSessionService {
+export class RemoteTunnelService {
 
     @inject(RemoteConnectionService)
     protected readonly connectionService: RemoteConnectionService;
@@ -34,30 +33,24 @@ export class RemoteSessionService {
     @inject(RemoteProxyServerProvider)
     protected readonly serverProvider: RemoteProxyServerProvider;
 
-    protected readonly sessions = new Map<string, RemoteSession>();
-
-    async getOrCreateProxySession(options: RemoteProxySessionOptions): Promise<RemoteSession> {
+    async addTunnel(options: RemoteTunnelOptions): Promise<RemoteTunnel> {
         const connection = this.connectionService.getConnection(options.remote);
         if (!connection) {
             throw new Error('No remote connection found for id ' + options.remote);
         }
         const server = await this.serverProvider.getProxyServer(socket => connection.forwardOut(socket));
         const port = (server.address() as net.AddressInfo).port;
-        const sessionId = v4();
-        const session = new RemoteSession({
-            id: sessionId,
+        const tunnel = new RemoteTunnel({
             port
         });
-        // When the frontend socket disconnects, close the server and delete the session
-        session.onDidSocketDisconnect(() => {
+        // When the frontend socket disconnects, close the server
+        tunnel.onDidSocketDisconnect(() => {
             server.close();
-            this.sessions.delete(sessionId);
         });
         connection.onDidDisconnect(() => {
-            session?.disconnect();
+            tunnel?.disconnect();
         });
-        this.sessions.set(sessionId, session);
-        return session;
+        return tunnel;
     }
 
 }

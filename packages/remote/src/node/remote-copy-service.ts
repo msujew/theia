@@ -19,7 +19,10 @@ import { inject, injectable, named } from '@theia/core/shared/inversify';
 import { RemoteCopyContribution, RemoteCopyRegistry, RemoteFile } from '@theia/core/lib/node/remote/remote-copy-contribution';
 import { RemoteConnection } from './remote-types';
 import { ContributionProvider } from '@theia/core';
+import * as archiver from 'archiver';
 import * as path from 'path';
+import * as fs from 'fs';
+import * as os from 'os';
 
 @injectable()
 export class RemoteCopyService {
@@ -36,14 +39,23 @@ export class RemoteCopyService {
     protected initialized = false;
 
     async copyToRemote(remote: RemoteConnection, destination: string): Promise<void> {
+        const zipName = path.basename(destination);
         const projectPath = this.applicationPackage.projectPath;
         const files = await this.getFiles();
-        const fullFiles: RemoteFile[] = files.map(file => ({
-            path: path.join(projectPath, file.path),
-            target: path.join(destination, file.target),
-            options: file.options
-        }));
-        await Promise.all(fullFiles.map(file => remote.copy(file.path, file.target, file.options)));
+        const filePath = path.join(os.tmpdir(), zipName);
+        // We stream to a file here and then copy it because it is faster
+        // Copying files via sftp is 4x times faster compared to readable streams
+        const stream = fs.createWriteStream(filePath);
+        const archive = archiver('tar', {
+            gzip: true
+        });
+        archive.pipe(stream);
+        for (const file of files) {
+            archive.file(path.join(projectPath, file.path), { name: file.path });
+        }
+        await archive.finalize();
+        await remote.copy(filePath, destination);
+        await fs.promises.unlink(filePath);
     }
 
     protected async getFiles(): Promise<RemoteFile[]> {

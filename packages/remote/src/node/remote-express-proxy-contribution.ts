@@ -18,7 +18,7 @@ import * as express from '@theia/core/shared/express';
 import { BackendApplicationContribution } from '@theia/core/lib/node';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { ExpressLayer, RemoteConnection } from './remote-types';
-import { AddressInfo } from 'net';
+import { AddressInfo, Server } from 'net';
 import expressHttpProxy = require('express-http-proxy');
 import { getCookies } from './remote-utils';
 import { Disposable } from '@theia/core';
@@ -55,8 +55,8 @@ export class RemoteExpressProxyContribution implements BackendApplicationContrib
         this.spliceRouter(this.app, router => router.name === 'serveStatic' ? 0 : undefined);
     }
 
-    setupProxyRouter(remote: RemoteConnection): Disposable {
-        const port = (remote.server.address() as AddressInfo).port.toString();
+    setupProxyRouter(remote: RemoteConnection, server: Server): Disposable {
+        const port = (server.address() as AddressInfo).port.toString();
         const handleProxy = expressHttpProxy(`http://localhost:${port}`, {
             filter: req => {
                 const cookies = getCookies(req);

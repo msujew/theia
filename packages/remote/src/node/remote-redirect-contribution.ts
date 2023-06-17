@@ -17,15 +17,15 @@
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { MessagingService } from '@theia/core/lib/node/messaging/messaging-service';
 import { Socket } from 'socket.io';
-import { RemoteSessionService } from './remote-session-service';
+import { RemoteTunnelService } from './remote-tunnel-service';
 import { RemoteConnectionSocketProvider } from './remote-connection-socket-provider';
 import { getCookies } from './remote-utils';
 
 @injectable()
 export class RemoteRedirectContribution implements MessagingService.RedirectContribution {
 
-    @inject(RemoteSessionService)
-    protected readonly sessionService: RemoteSessionService;
+    @inject(RemoteTunnelService)
+    protected readonly sessionService: RemoteTunnelService;
 
     @inject(RemoteConnectionSocketProvider)
     protected readonly socketProvider: RemoteConnectionSocketProvider;
@@ -37,7 +37,7 @@ export class RemoteRedirectContribution implements MessagingService.RedirectCont
             return false;
         }
         try {
-            const proxySession = await this.sessionService.getOrCreateProxySession({
+            const proxySession = await this.sessionService.addTunnel({
                 remote: remoteId
             });
             const proxySocket = this.socketProvider.getProxySocket({

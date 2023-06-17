@@ -17,6 +17,8 @@
 import { Disposable, Emitter, Event } from '@theia/core';
 import * as net from 'net';
 
+export type RemotePlatform = 'windows' | 'darwin' | 'linux';
+
 export interface ExpressLayer {
     name: string
     regexp: RegExp
@@ -44,22 +46,20 @@ export interface RemoteConnection extends Disposable {
     id: string;
     name: string;
     type: string;
-    server: net.Server;
+    remotePort: number;
     onDidDisconnect: Event<void>;
     forwardOut(socket: net.Socket): void;
-    exec(cmd: string, args: string[], options?: RemoteExecOptions): Promise<RemoteExecResult>;
-    execPartial(cmd: string, tester: RemoteExecTester, args: string[], options?: RemoteExecOptions): Promise<RemoteExecResult>;
-    copy(localPath: string, remotePath: string, options?: RemoteCopyOptions): Promise<void>;
+    exec(cmd: string, args?: string[], options?: RemoteExecOptions): Promise<RemoteExecResult>;
+    execPartial(cmd: string, tester: RemoteExecTester, args?: string[], options?: RemoteExecOptions): Promise<RemoteExecResult>;
+    copy(localPath: string | Buffer | NodeJS.ReadableStream, remotePath: string, options?: RemoteCopyOptions): Promise<void>;
 }
 
 export interface RemoteSessionOptions {
-    id: string;
     port: number;
 }
 
-export class RemoteSession implements Disposable {
+export class RemoteTunnel implements Disposable {
 
-    readonly id: string;
     readonly port: number;
 
     private readonly onDidRemoteDisconnectEmitter = new Emitter<void>();
@@ -75,7 +75,6 @@ export class RemoteSession implements Disposable {
 
     constructor(options: RemoteSessionOptions) {
         this.port = options.port;
-        this.id = options.id;
     }
 
     disconnect(): void {

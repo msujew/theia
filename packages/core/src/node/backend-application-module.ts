@@ -42,6 +42,7 @@ import { OSBackendApplicationContribution } from './os-backend-application-contr
 import { BackendRequestFacade } from './request/backend-request-facade';
 import { FileSystemLocking, FileSystemLockingImpl } from './filesystem-locking';
 import { RemoteCopyContribution, RemoteCopyRegistry } from './remote/remote-copy-contribution';
+import { CoreCopyContribution } from './remote/core-copy-contribution';
 
 decorate(injectable(), ApplicationPackage);
 
@@ -136,4 +137,6 @@ export const backendApplicationModule = new ContainerModule(bind => {
 
     bindContributionProvider(bind, RemoteCopyContribution);
     bind(RemoteCopyRegistry).toSelf().inSingletonScope();
+    bind(CoreCopyContribution).toSelf().inSingletonScope();
+    bind(RemoteCopyContribution).toService(CoreCopyContribution);
 });

@@ -14,32 +14,14 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { inject, injectable } from '@theia/core/shared/inversify';
-import { RemoteConnection } from './remote-types';
-import { nanoid } from 'nanoid';
-import { Disposable } from '@theia/core';
-import { RemoteCopyService } from './remote-copy-service';
+import { injectable } from 'inversify';
+import { RemoteCopyContribution, RemoteCopyRegistry } from './remote-copy-contribution';
 
 @injectable()
-export class RemoteConnectionService {
-
-    @inject(RemoteCopyService)
-    protected readonly copyService: RemoteCopyService;
-
-    protected readonly connections = new Map<string, RemoteConnection>();
-
-    getConnection(id: string): RemoteConnection | undefined {
-        return this.connections.get(id);
-    }
-
-    getConnectionId(): string {
-        return nanoid(10);
-    }
-
-    register(connection: RemoteConnection): Disposable {
-        this.connections.set(connection.id, connection);
-        return Disposable.create(() => {
-            this.connections.delete(connection.id);
-        });
+export class CoreCopyContribution implements RemoteCopyContribution {
+    async copy(registry: RemoteCopyRegistry): Promise<void> {
+        await registry.glob('lib/backend/!(native)');
+        await registry.directory('lib/frontend');
+        await registry.directory('lib/webview');
     }
 }

@@ -27,6 +27,7 @@ import SftpClient = require('ssh2-sftp-client');
 import * as net from 'net';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import { SSHIdentityFileCollector, SSHKey } from './ssh-identity-file-collector';
+import { RemoteSetupService } from '../remote-setup-service';
 
 @injectable()
 export class RemoteSSHConnectionProviderImpl implements RemoteSSHConnectionProvider {
@@ -43,6 +44,9 @@ export class RemoteSSHConnectionProviderImpl implements RemoteSSHConnectionProvi
     @inject(RemoteExpressProxyContribution)
     protected readonly remoteExpressProxy: RemoteExpressProxyContribution;
 
+    @inject(RemoteSetupService)
+    protected readonly remoteSetup: RemoteSetupService;
+
     @inject(QuickInputService)
     protected readonly quickInputService: QuickInputService;
 
@@ -51,9 +55,14 @@ export class RemoteSSHConnectionProviderImpl implements RemoteSSHConnectionProvi
 
     async establishConnection(host: string, user: string): Promise<string> {
         const remote = await this.establishSSHConnection(host, user);
+        await this.remoteSetup.setup(remote);
         const registration = this.remoteConnectionService.register(remote);
-        const proxyRouter = this.remoteExpressProxy.setupProxyRouter(remote);
+        const server = await this.serverProvider.getProxyServer(socket => {
+            remote.forwardOut(socket);
+        });
+        const proxyRouter = this.remoteExpressProxy.setupProxyRouter(remote, server);
         remote.onDidDisconnect(() => {
+            server.close();
             proxyRouter.dispose();
             registration.dispose();
         });
@@ -68,15 +77,11 @@ export class RemoteSSHConnectionProviderImpl implements RemoteSSHConnectionProvi
         const sshAuthHandler = this.getAuthHandler(user, host, identityFiles);
         sshClient
             .on('ready', async () => {
-                const server = await this.serverProvider.getProxyServer(socket => {
-                    connection.forwardOut(socket);
-                });
                 const connection = new RemoteSSHConnection({
                     client: sshClient,
                     id: sessionId,
                     name: host,
-                    type: 'SSH',
-                    server
+                    type: 'SSH'
                 });
                 deferred.resolve(connection);
             }).on('error', err => {
@@ -199,7 +204,6 @@ export interface RemoteSSHConnectionOptions {
     name: string;
     type: string;
     client: ssh2.Client;
-    server: net.Server;
 }
 
 export class RemoteSSHConnection implements RemoteConnection {
@@ -208,7 +212,7 @@ export class RemoteSSHConnection implements RemoteConnection {
     name: string;
     type: string;
     client: ssh2.Client;
-    server: net.Server;
+    remotePort = 0;
 
     private sftpClientPromise: Promise<SftpClient>;
 
@@ -223,7 +227,6 @@ export class RemoteSSHConnection implements RemoteConnection {
         this.type = options.type;
         this.name = options.name;
         this.client = options.client;
-        this.server = options.server;
         this.onDidDisconnect(() => this.dispose());
         this.client.on('end', () => {
             this.onDidDisconnectEmitter.fire();
@@ -243,7 +246,7 @@ export class RemoteSSHConnection implements RemoteConnection {
     }
 
     forwardOut(socket: net.Socket): void {
-        this.client.forwardOut(socket.localAddress!, socket.localPort!, '127.0.0.1', 3000, (err, stream) => {
+        this.client.forwardOut(socket.localAddress!, socket.localPort!, '127.0.0.1', this.remotePort, (err, stream) => {
             if (err) {
                 console.debug('Proxy message rejected', err);
             } else {
@@ -252,7 +255,7 @@ export class RemoteSSHConnection implements RemoteConnection {
         });
     }
 
-    async copy(localPath: string, remotePath: string, options?: RemoteCopyOptions): Promise<void> {
+    async copy(localPath: string | Buffer | NodeJS.ReadableStream, remotePath: string, options?: RemoteCopyOptions): Promise<void> {
         const sftpClient = await this.sftpClientPromise;
         await sftpClient.put(localPath, remotePath, {
             writeStreamOptions: {
@@ -260,12 +263,12 @@ export class RemoteSSHConnection implements RemoteConnection {
                 encoding: options?.encoding
             }
         });
-        console.log(`Copied ${localPath} to ${remotePath}!`);
+        console.log(`Copied ${typeof localPath === 'string' ? localPath : 'buffer'} to ${remotePath}!`);
     }
 
     exec(cmd: string, args?: string[], options: RemoteExecOptions = {}): Promise<RemoteExecResult> {
         const deferred = new Deferred<RemoteExecResult>();
-        cmd += (Array.isArray(args) ? (' ' + args.join(' ')) : '');
+        cmd = this.buildCmd(cmd, args);
         this.client.exec(cmd, options, (err, stream) => {
             if (err) {
                 return deferred.reject(err);
@@ -285,7 +288,7 @@ export class RemoteSSHConnection implements RemoteConnection {
 
     execPartial(cmd: string, tester: RemoteExecTester, args?: string[], options: RemoteExecOptions = {}): Promise<RemoteExecResult> {
         const deferred = new Deferred<RemoteExecResult>();
-        cmd += (Array.isArray(args) ? (' ' + args.join(' ')) : '');
+        cmd = this.buildCmd(cmd, args);
         this.client.exec(cmd, options, (err, stream) => {
             if (err) {
                 return deferred.reject(err);
@@ -317,8 +320,14 @@ export class RemoteSSHConnection implements RemoteConnection {
         return deferred.promise;
     }
 
+    protected buildCmd(cmd: string, args?: string[]): string {
+        const escapedArgs = args?.map(arg => `"${arg.replace(/"/g, '\\"')}"`) || [];
+        const fullCmd = cmd + (escapedArgs.length > 0 ? (' ' + escapedArgs.join(' ')) : '');
+        console.log(`Build full cmd: '${fullCmd}'`);
+        return fullCmd;
+    }
+
     dispose(): void {
-        this.server.close();
         this.client.destroy();
     }
 
