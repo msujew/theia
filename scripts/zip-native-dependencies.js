@@ -7,12 +7,12 @@ const archiver = require('archiver');
 async function run() {
     const repoPath = path.resolve(__dirname, '..');
     const zipFile = path.join(__dirname, `native-dependencies-${process.platform}-${process.arch}.zip`);
-    const electronAppPath = path.join(repoPath, 'examples', 'electron');
+    const browserAppPath = path.join(repoPath, 'examples', 'browser');
     const nativeDependencies = await glob('lib/backend/native/**', {
-        cwd: electronAppPath
+        cwd: browserAppPath
     });
     const buildDependencies = await glob('lib/build/Release/**', {
-        cwd: electronAppPath
+        cwd: browserAppPath
     });
     const archive = archiver('zip');
     const output = fs.createWriteStream(zipFile, { flags: "w" });
@@ -21,7 +21,7 @@ async function run() {
         ...nativeDependencies,
         ...buildDependencies
     ]) {
-        const filePath = path.join(electronAppPath, file);
+        const filePath = path.join(browserAppPath, file);
         archive.file(filePath, {
             name: file,
             mode: (await fs.promises.stat(filePath)).mode
