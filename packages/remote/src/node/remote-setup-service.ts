@@ -22,6 +22,7 @@ import { RequestService } from '@theia/core/shared/@theia/request';
 import { RemoteConnection, RemoteExecResult, RemotePlatform } from './remote-types';
 import { ApplicationPackage } from '@theia/core/shared/@theia/application-package';
 import { RemoteCopyService } from './remote-copy-service';
+import { RemoteNativeDependencyService } from './remote-native-dependency-service';
 
 /**
  * The Node.js version that the current Electron version uses.
@@ -37,6 +38,9 @@ export class RemoteSetupService {
 
     @inject(RemoteCopyService)
     protected readonly copyService: RemoteCopyService;
+
+    @inject(RemoteNativeDependencyService)
+    protected readonly nativeDependencyService: RemoteNativeDependencyService;
 
     @inject(ApplicationPackage)
     protected readonly applicationPackage: ApplicationPackage;
@@ -61,7 +65,7 @@ export class RemoteSetupService {
         }
         // 3. Copy backend to remote system
         const applicationZipFile = this.joinRemotePath(platform, applicationDirectory, `${this.getRemoteAppName()}.tar`);
-        await this.copyService.copyToRemote(connection, applicationZipFile);
+        await this.copyService.copyToRemote(connection, platform, applicationZipFile);
         await this.unzipRemote(connection, applicationZipFile, applicationDirectory);
         // 4. Download and copy native dependencies
         // 5. start remote backend

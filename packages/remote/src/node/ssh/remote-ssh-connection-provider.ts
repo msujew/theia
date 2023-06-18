@@ -259,7 +259,7 @@ export class RemoteSSHConnection implements RemoteConnection {
         const sftpClient = await this.sftpClientPromise;
         await sftpClient.put(localPath, remotePath, {
             writeStreamOptions: {
-                mode: options?.chmod,
+                mode: options?.mode,
                 encoding: options?.encoding
             }
         });

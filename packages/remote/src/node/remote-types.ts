@@ -15,9 +15,10 @@
 // *****************************************************************************
 
 import { Disposable, Emitter, Event } from '@theia/core';
+import { RemotePlatform } from '@theia/core/lib/node/remote';
 import * as net from 'net';
 
-export type RemotePlatform = 'windows' | 'darwin' | 'linux';
+export { RemotePlatform };
 
 export interface ExpressLayer {
     name: string
@@ -37,7 +38,7 @@ export interface RemoteExecResult {
 
 export interface RemoteCopyOptions {
     encoding?: string;
-    chmod?: number;
+    mode?: number;
 }
 
 export type RemoteExecTester = (stdout: string, stderr: string) => boolean;

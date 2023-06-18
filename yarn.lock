@@ -1775,7 +1775,7 @@
   dependencies:
     "@types/node" "*"
 
-"@types/decompress@^4.2.2":
+"@types/decompress@^4.2.2", "@types/decompress@^4.2.4":
   version "4.2.4"
   resolved "https://registry.yarnpkg.com/@types/decompress/-/decompress-4.2.4.tgz#dd2715d3ac1f566d03e6e302d1a26ffab59f8c5c"
   integrity sha512-/C8kTMRTNiNuWGl5nEyKbPiMv6HA+0RbEXzFhFBEzASM6+oa4tJro9b8nj7eRlOFfuLdzUU+DS/GPDlvvzMOhA==

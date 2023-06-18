@@ -167,6 +167,9 @@
     {
       "backend": "lib/node/request/backend-request-module",
       "backendElectron": "lib/electron-node/request/electron-backend-request-module"
+    },
+    {
+      "backend": "lib/node/remote/backend-remote-module"
     }
   ],
   "keywords": [

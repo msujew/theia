@@ -28,6 +28,7 @@ import { RemoteSSHConnectionProviderImpl } from './ssh/remote-ssh-connection-pro
 import { SSHIdentityFileCollector } from './ssh/ssh-identity-file-collector';
 import { RemoteCopyService } from './remote-copy-service';
 import { RemoteSetupService } from './remote-setup-service';
+import { RemoteNativeDependencyService } from './remote-native-dependency-service';
 
 export const remoteConnectionModule = ConnectionContainerModule.create(({ bind, bindBackendService }) => {
     bind(RemoteSSHConnectionProviderImpl).toSelf().inSingletonScope();
@@ -38,6 +39,7 @@ export const remoteConnectionModule = ConnectionContainerModule.create(({ bind, 
 export default new ContainerModule(bind => {
     bind(RemoteCopyService).toSelf().inSingletonScope();
     bind(RemoteSetupService).toSelf().inSingletonScope();
+    bind(RemoteNativeDependencyService).toSelf().inSingletonScope();
     bind(RemoteProxyServerProvider).toSelf().inSingletonScope();
     bind(RemoteConnectionSocketProvider).toSelf().inSingletonScope();
     bind(RemoteTunnelService).toSelf().inSingletonScope();

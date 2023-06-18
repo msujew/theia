@@ -30,7 +30,7 @@ export interface RemoteCopyContribution {
 }
 
 export interface RemoteCopyOptions {
-    chmod?: number;
+    mode?: number;
 }
 
 export interface RemoteFile {

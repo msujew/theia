@@ -17,12 +17,13 @@
 import { ApplicationPackage } from '@theia/core/shared/@theia/application-package';
 import { inject, injectable, named } from '@theia/core/shared/inversify';
 import { RemoteCopyContribution, RemoteCopyRegistry, RemoteFile } from '@theia/core/lib/node/remote/remote-copy-contribution';
-import { RemoteConnection } from './remote-types';
+import { RemoteConnection, RemotePlatform } from './remote-types';
 import { ContributionProvider } from '@theia/core';
 import * as archiver from 'archiver';
 import * as path from 'path';
 import * as fs from 'fs';
 import * as os from 'os';
+import { RemoteNativeDependencyService } from './remote-native-dependency-service';
 
 @injectable()
 export class RemoteCopyService {
@@ -33,32 +34,54 @@ export class RemoteCopyService {
     @inject(RemoteCopyRegistry)
     protected readonly copyRegistry: RemoteCopyRegistry;
 
+    @inject(RemoteNativeDependencyService)
+    protected readonly nativeDependencyService: RemoteNativeDependencyService;
+
     @inject(ContributionProvider) @named(RemoteCopyContribution)
     protected readonly copyContributions: ContributionProvider<RemoteCopyContribution>;
 
     protected initialized = false;
 
-    async copyToRemote(remote: RemoteConnection, destination: string): Promise<void> {
+    async copyToRemote(remote: RemoteConnection, remotePlatform: RemotePlatform, destination: string): Promise<void> {
         const zipName = path.basename(destination);
         const projectPath = this.applicationPackage.projectPath;
-        const files = await this.getFiles();
-        const filePath = path.join(os.tmpdir(), zipName);
+        const tempDir = await this.getTempDir();
+        const zipPath = path.join(tempDir, zipName);
+        const files = await this.getFiles(remotePlatform, tempDir);
         // We stream to a file here and then copy it because it is faster
         // Copying files via sftp is 4x times faster compared to readable streams
-        const stream = fs.createWriteStream(filePath);
+        const stream = fs.createWriteStream(zipPath);
         const archive = archiver('tar', {
             gzip: true
         });
         archive.pipe(stream);
         for (const file of files) {
-            archive.file(path.join(projectPath, file.path), { name: file.path });
+            const filePath = path.isAbsolute(file.path)
+                ? file.path
+                : path.join(projectPath, file.path);
+
+            archive.file(filePath, {
+                name: file.target,
+                mode: file.options?.mode
+            });
         }
         await archive.finalize();
-        await remote.copy(filePath, destination);
-        await fs.promises.unlink(filePath);
+        await remote.copy(zipPath, destination);
+        // await fs.promises.rm(tempDir, {
+        //     recursive: true,
+        //     force: true
+        // });
     }
 
-    protected async getFiles(): Promise<RemoteFile[]> {
+    protected async getFiles(remotePlatform: RemotePlatform, tempDir: string): Promise<RemoteFile[]> {
+        const [localFiles, nativeDependencies] = await Promise.all([
+            this.loadCopyContributions(),
+            this.loadNativeDependencies(remotePlatform, tempDir)
+        ]);
+        return [...localFiles, ...nativeDependencies];
+    }
+
+    protected async loadCopyContributions(): Promise<RemoteFile[]> {
         if (this.initialized) {
             return this.copyRegistry.getFiles();
         }
@@ -66,5 +89,22 @@ export class RemoteCopyService {
             .map(copyContribution => copyContribution.copy(this.copyRegistry)));
         this.initialized = true;
         return this.copyRegistry.getFiles();
+    }
+
+    protected async loadNativeDependencies(remotePlatform: RemotePlatform, tempDir: string): Promise<RemoteFile[]> {
+        const dependencyFiles = await this.nativeDependencyService.downloadDependencies(remotePlatform, tempDir);
+        return dependencyFiles.map(file => ({
+            path: file.path,
+            target: file.target,
+            options: {
+                mode: file.mode
+            }
+        }));
+    }
+
+    protected async getTempDir(): Promise<string> {
+        const dir = path.join(os.tmpdir(), 'theia-remote-');
+        const tempDir = await fs.promises.mkdtemp(dir);
+        return tempDir;
     }
 }

@@ -19,12 +19,16 @@ import { RemoteConnection } from './remote-types';
 import { nanoid } from 'nanoid';
 import { Disposable } from '@theia/core';
 import { RemoteCopyService } from './remote-copy-service';
+import { RemoteNativeDependencyService } from './remote-native-dependency-service';
 
 @injectable()
 export class RemoteConnectionService {
 
     @inject(RemoteCopyService)
     protected readonly copyService: RemoteCopyService;
+
+    @inject(RemoteNativeDependencyService)
+    protected readonly nativeDependencyService: RemoteNativeDependencyService;
 
     protected readonly connections = new Map<string, RemoteConnection>();
 

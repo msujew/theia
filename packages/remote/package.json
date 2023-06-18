@@ -5,6 +5,10 @@
   "dependencies": {
     "@theia/core": "1.38.0",
     "archiver": "^5.3.1",
+    "decompress": "^4.2.1",
+    "decompress-tar": "^4.0.0",
+    "decompress-targz": "^4.0.0",
+    "decompress-unzip": "^4.0.1",
     "express-http-proxy": "^1.6.3",
     "nanoid": "3.3.4",
     "ssh2": "^1.12.0",
@@ -52,6 +56,7 @@
   "devDependencies": {
     "@theia/ext-scripts": "1.38.0",
     "@types/archiver": "^5.3.2",
+    "@types/decompress": "^4.2.4",
     "@types/express-http-proxy": "^1.6.3",
     "@types/ssh2": "^1.11.11",
     "@types/ssh2-sftp-client": "^9.0.0"
