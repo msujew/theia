@@ -17,4 +17,4 @@
 export * from './core-copy-contribution';
 export * from './remote-copy-contribution';
 export * from './remote-native-dependency-contribution';
-export * from './remote-native-dependency-contributions';
+export * from './app-native-dependency-contribution';

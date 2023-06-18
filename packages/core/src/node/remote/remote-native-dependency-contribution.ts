@@ -14,11 +14,11 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { NodeRequestOptions } from '@theia/request/lib/node-request-service';
-import { isObject, THEIA_VERSION } from '../../common';
+import { RequestOptions } from '@theia/request';
+import { isObject } from '../../common';
 
 export interface FileDependencyResult {
-    targetFile: string;
+    path: string;
     mode?: number;
 }
 
@@ -27,7 +27,6 @@ export type RemotePlatform = 'windows' | 'linux' | 'darwin';
 export type DependencyDownload = FileDependencyDownload | DirectoryDependencyDownload;
 
 export interface FileDependencyDownload {
-    archive?: 'tar' | 'zip' | 'tgz'
     file: FileDependencyResult
     buffer: Buffer
 }
@@ -38,57 +37,28 @@ export namespace FileDependencyResult {
     }
 }
 
-// Directories are expected to be in a zipped format anyway
-// We always unzip them and call `files` on each contained file
 export interface DirectoryDependencyDownload {
-    files: (path: string) => FileDependencyResult;
     archive: 'tar' | 'zip' | 'tgz'
     buffer: Buffer
 }
 
 export namespace DirectoryDependencyDownload {
     export function is(item: unknown): item is DirectoryDependencyDownload {
-        return isObject(item) && 'buffer' in item && 'files' in item;
+        return isObject(item) && 'buffer' in item && 'archive' in item;
     }
 }
 
 export interface DownloadOptions {
     remotePlatform: RemotePlatform;
     theiaVersion: string;
-    download: (requestInfo: string | NodeRequestOptions) => Promise<Buffer>
+    download: (requestInfo: string | RequestOptions) => Promise<Buffer>
 }
+
+export const RemoteNativeDependencyContribution = Symbol('RemoteNativeDependencyContribution');
 
 /**
  * contribution used for downloading prebuild nativ dependency when connecting to a remote machine with a different system
  */
 export interface RemoteNativeDependencyContribution {
-    // used to filter out multiple contributions downloading the same package
-    dependencyId: string;
     download(options: DownloadOptions): Promise<DependencyDownload>;
-}
-
-export namespace RemoteNativeDependencyContribution {
-    export const Contribution = Symbol('RemoteNativeDependencyContribution');
-
-    // TODO: For points for testing purposes to a non-theia repo
-    // 'https://github.com/eclipse-theia/theia/releases/download'
-    export const DEFAULT_DEPENDENCY_DOWNLOAD_URL = 'https://github.com/jonah-iden/theia-native-dependencies/releases/download';
-
-    export function getDefaultURLForFile(dependencyName: string, remotePlatform: RemotePlatform, theiaVersion: string = THEIA_VERSION): string {
-        return `${DEFAULT_DEPENDENCY_DOWNLOAD_URL}/${theiaVersion}/${dependencyName}-${remotePlatform}-x64.zip`;
-    }
-}
-
-export const DependencyDownloadService = Symbol('DependencyDownloadService');
-
-/**
- * used by the "@theia/remote" package to download nativ dependencies for the remote system;
- */
-export interface DependencyDownloadService {
-
-    /**
-     * downloads natvie dependencies for copying on a remote machine
-     * @param remoteSystem the operating system of the remote machine in format "{platform}-{architecure}"" e.g. "win32-x64"
-     */
-    downloadDependencies(remoteSystem: string): Promise<DependencyDownload[]>;
 }

@@ -30,8 +30,6 @@ import { GitPromptServer, GitPromptClient, GitPrompt } from '../common/git-promp
 import { DugiteGitPromptServer } from './dugite-git-prompt';
 import { ConnectionContainerModule } from '@theia/core/lib/node/messaging/connection-container-module';
 import { DefaultGitInit, GitInit } from './init/git-init';
-import { FindGitRepositoriesNativeDependencyContribution } from './find-git-repositories-native-dependency';
-import { RemoteNativeDependencyContribution } from '@theia/core/lib/node/remote';
 
 const SINGLE_THREADED = process.argv.indexOf('--no-cluster') !== -1;
 
@@ -120,7 +118,4 @@ export default new ContainerModule(bind => {
             return server;
         })
     ).inSingletonScope();
-
-    bind(FindGitRepositoriesNativeDependencyContribution).toSelf().inSingletonScope();
-    bind(RemoteNativeDependencyContribution.Contribution).toService(FindGitRepositoriesNativeDependencyContribution);
 });

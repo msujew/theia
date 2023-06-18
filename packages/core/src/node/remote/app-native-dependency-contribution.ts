@@ -14,21 +14,24 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { DependencyDownload, DownloadOptions, RemoteNativeDependencyContribution } from '@theia/core/lib/node/remote';
-import { injectable } from '@theia/core/shared/inversify';
-import path = require('path');
+import { injectable } from 'inversify';
+import { RemoteNativeDependencyContribution, DownloadOptions, DependencyDownload, RemotePlatform } from './remote-native-dependency-contribution';
 
 @injectable()
-export class NodePtyNativeDependencyContribution implements RemoteNativeDependencyContribution {
-    dependencyId = 'node-pty';
+export class AppNativeDependencyContribution implements RemoteNativeDependencyContribution {
+
+    // TODO: Points for testing purposes to a non-theia repo
+    // Should be replaced with:
+    // 'https://github.com/eclipse-theia/theia/releases/download'
+    appDownloadUrlBase = 'https://github.com/jonah-iden/theia-native-dependencies/releases/download';
+
+    getDefaultURLForFile(remotePlatform: RemotePlatform, theiaVersion: string): string {
+        return `${this.appDownloadUrlBase}/${theiaVersion}/native-dependencies-${remotePlatform}-x64.zip`;
+    }
 
     async download(options: DownloadOptions): Promise<DependencyDownload> {
         return {
-            files: filePath => ({
-                targetFile: filePath.endsWith('pty.node') ? 'lib/backend/native/pty.node' : `lib/build/Release/${path.basename(filePath)}`,
-                mode: filePath.endsWith('.node') ? undefined : 0o777
-            }),
-            buffer: await options.download(RemoteNativeDependencyContribution.getDefaultURLForFile('node-pty', options.remotePlatform, options.theiaVersion)),
+            buffer: await options.download(this.getDefaultURLForFile(options.remotePlatform, options.theiaVersion)),
             archive: 'zip'
         };
     }

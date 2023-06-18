@@ -67,10 +67,10 @@ export class RemoteCopyService {
         }
         await archive.finalize();
         await remote.copy(zipPath, destination);
-        // await fs.promises.rm(tempDir, {
-        //     recursive: true,
-        //     force: true
-        // });
+        await fs.promises.rm(tempDir, {
+            recursive: true,
+            force: true
+        });
     }
 
     protected async getFiles(remotePlatform: RemotePlatform, tempDir: string): Promise<RemoteFile[]> {

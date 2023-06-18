@@ -19,12 +19,7 @@ import { bindContributionProvider } from '../../common';
 import { CoreCopyContribution } from './core-copy-contribution';
 import { RemoteCopyContribution, RemoteCopyRegistry } from './remote-copy-contribution';
 import { RemoteNativeDependencyContribution } from './remote-native-dependency-contribution';
-import {
-    DrivelistNativeDependencyContribution,
-    KeytarNativeDependencyContribution,
-    NSFWNativeDependencyContribution,
-    RigrepNativeDependencyContribution
-} from './remote-native-dependency-contributions';
+import { AppNativeDependencyContribution } from './app-native-dependency-contribution';
 
 export default new ContainerModule(bind => {
     bindContributionProvider(bind, RemoteCopyContribution);
@@ -32,14 +27,7 @@ export default new ContainerModule(bind => {
     bind(CoreCopyContribution).toSelf().inSingletonScope();
     bind(RemoteCopyContribution).toService(CoreCopyContribution);
 
-    bindContributionProvider(bind, RemoteNativeDependencyContribution.Contribution);
-    for (const dependencyContribution of [
-        DrivelistNativeDependencyContribution,
-        KeytarNativeDependencyContribution,
-        NSFWNativeDependencyContribution,
-        RigrepNativeDependencyContribution
-    ]) {
-        bind(dependencyContribution).toSelf().inSingletonScope();
-        bind(RemoteNativeDependencyContribution.Contribution).toService(dependencyContribution);
-    }
+    bindContributionProvider(bind, RemoteNativeDependencyContribution);
+    bind(AppNativeDependencyContribution).toSelf().inSingletonScope();
+    bind(RemoteNativeDependencyContribution).toService(AppNativeDependencyContribution);
 });

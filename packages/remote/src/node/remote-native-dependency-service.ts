@@ -16,7 +16,7 @@
 
 import { ContributionProvider, THEIA_VERSION } from '@theia/core';
 import { inject, injectable, named } from '@theia/core/shared/inversify';
-import { DependencyDownload, DirectoryDependencyDownload, FileDependencyResult, RemoteNativeDependencyContribution, RemotePlatform } from '@theia/core/lib/node/remote';
+import { DependencyDownload, DirectoryDependencyDownload, RemoteNativeDependencyContribution, RemotePlatform } from '@theia/core/lib/node/remote';
 import { RequestContext, RequestService, RequestOptions } from '@theia/core/shared/@theia/request';
 import * as decompress from 'decompress';
 import * as path from 'path';
@@ -42,7 +42,7 @@ export interface NativeDependencyFile {
 @injectable()
 export class RemoteNativeDependencyService {
 
-    @inject(ContributionProvider) @named(RemoteNativeDependencyContribution.Contribution)
+    @inject(ContributionProvider) @named(RemoteNativeDependencyContribution)
     protected nativeDependencyContributions: ContributionProvider<RemoteNativeDependencyContribution>;
 
     @inject(RequestService)
@@ -51,18 +51,13 @@ export class RemoteNativeDependencyService {
     async downloadDependencies(remotePlatform: RemotePlatform, directory: string): Promise<NativeDependencyFile[]> {
         const contributionResults = await Promise.all(this.nativeDependencyContributions.getContributions()
             .map(async contribution => {
-                try {
-                    const result = await contribution.download({
-                        remotePlatform,
-                        theiaVersion: THEIA_VERSION,
-                        download: requestInfo => this.downloadDependency(requestInfo)
-                    });
-                    const dependency = await this.storeDependency(result, directory);
-                    return dependency;
-                } catch (err) {
-                    console.error('Failed to download dependency ' + contribution.dependencyId);
-                    throw err;
-                }
+                const result = await contribution.download({
+                    remotePlatform,
+                    theiaVersion: THEIA_VERSION,
+                    download: requestInfo => this.downloadDependency(requestInfo)
+                });
+                const dependency = await this.storeDependency(result, directory);
+                return dependency;
             }));
         return contributionResults.flat();
     }
@@ -71,7 +66,6 @@ export class RemoteNativeDependencyService {
         const options = typeof downloadURI === 'string'
             ? { url: downloadURI, ...DEFAULT_HTTP_OPTIONS }
             : { ...DEFAULT_HTTP_OPTIONS, ...downloadURI };
-        console.log('Download dependency from ' + options.url);
         const req = await this.requestService.request(options);
         if (RequestContext.isSuccess(req)) {
             return Buffer.from(req.buffer);
@@ -81,7 +75,7 @@ export class RemoteNativeDependencyService {
     }
 
     protected async storeDependency(dependency: DependencyDownload, directory: string): Promise<NativeDependencyFile[]> {
-        if (DirectoryDependencyDownload.is(dependency) || dependency.archive) {
+        if (DirectoryDependencyDownload.is(dependency)) {
             const archiveBuffer = dependency.buffer;
             const plugins: unknown[] = [];
             if (dependency.archive === 'tar') {
@@ -92,33 +86,22 @@ export class RemoteNativeDependencyService {
                 plugins.push(decompressUnzip());
             }
             const files = await decompress(archiveBuffer, directory, { plugins });
-            if (FileDependencyResult.is(dependency)) {
-                const file = files[0];
+            const result: NativeDependencyFile[] = await Promise.all(files.map(async file => {
                 const localPath = path.join(directory, file.path);
-                return [{
+                return {
                     path: localPath,
-                    target: dependency.file.targetFile,
-                    mode: dependency.file.mode
-                }];
-            } else {
-                const result: NativeDependencyFile[] = await Promise.all(files.map(async file => {
-                    const fileResult = dependency.files(file.path);
-                    const localPath = path.join(directory, file.path);
-                    return {
-                        path: localPath,
-                        target: fileResult.targetFile,
-                        mode: fileResult.mode
-                    };
-                }));
-                return result;
-            }
+                    target: file.path,
+                    mode: file.mode
+                };
+            }));
+            return result;
         } else {
-            const fileName = path.basename(dependency.file.targetFile);
+            const fileName = path.basename(dependency.file.path);
             const localPath = path.join(directory, fileName);
             await fs.writeFile(localPath, dependency.buffer);
             return [{
                 path: localPath,
-                target: dependency.file.targetFile,
+                target: dependency.file.path,
                 mode: dependency.file.mode
             }];
         }
