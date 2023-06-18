@@ -21,7 +21,12 @@ import { WsRequestValidatorContribution } from '../../node/ws-request-validators
 @injectable()
 export class ElectronWsOriginValidator implements WsRequestValidatorContribution {
 
+    enabled = true;
+
     allowWsUpgrade(request: http.IncomingMessage): boolean {
+        if (!this.enabled) {
+            return true;
+        }
         // On Electron the main page is served from the `file` protocol.
         // We don't expect the requests to come from anywhere else.
         return request.headers.origin === 'file://';
