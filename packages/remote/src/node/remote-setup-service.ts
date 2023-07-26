@@ -191,7 +191,7 @@ export class RemoteSetupService {
 
     protected async dirExistsRemote(connection: RemoteConnection, remotePath: string): Promise<boolean> {
         const cdResult = await this.retry(() => connection.exec(`cd "${remotePath}";echo "Success"`));
-        return Boolean(cdResult.stdout);
+        return !Boolean(cdResult.stderr);
     }
 
     protected async unzipRemote(connection: RemoteConnection, remoteFile: string, remoteDirectory: string): Promise<void> {
