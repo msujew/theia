@@ -123,7 +123,7 @@ export class RemoteFrontendContribution implements CommandContribution, Frontend
             });
         }
         const selection = await this.quickInputService?.showQuickPick(quickPicks, {
-            placeholder: nls.localizeByDefault('Select an option to connect to a Remote Window')
+            placeholder: nls.localizeByDefault('Select an option to open a Remote Window')
         });
         if (selection) {
             this.commandRegistry.executeCommand(selection.id!);
