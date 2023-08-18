@@ -68,10 +68,10 @@ export class RemoteSetupService {
             await this.unzipRemote(connection, remoteNodeZip, applicationDirectory);
         }
         // 4. Copy backend to remote system
-        report('Copying application to remote...');
         const libDir = this.joinRemotePath(platform, applicationDirectory, 'lib');
         const libDirExists = await this.dirExistsRemote(connection, libDir);
         if (!libDirExists) {
+            report('Copying application to remote...');
             const applicationZipFile = this.joinRemotePath(platform, applicationDirectory, `${this.getRemoteAppName()}.tar`);
             await this.copyService.copyToRemote(connection, platform, applicationZipFile);
             await this.unzipRemote(connection, applicationZipFile, applicationDirectory);

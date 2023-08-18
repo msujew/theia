@@ -20,9 +20,10 @@ import { nanoid } from 'nanoid';
 import { Disposable } from '@theia/core';
 import { RemoteCopyService } from './remote-copy-service';
 import { RemoteNativeDependencyService } from './remote-native-dependency-service';
+import { BackendApplicationContribution } from '@theia/core/lib/node';
 
 @injectable()
-export class RemoteConnectionService {
+export class RemoteConnectionService implements BackendApplicationContribution {
 
     @inject(RemoteCopyService)
     protected readonly copyService: RemoteCopyService;
@@ -45,5 +46,11 @@ export class RemoteConnectionService {
         return Disposable.create(() => {
             this.connections.delete(connection.id);
         });
+    }
+
+    onStop(): void {
+        for (const connection of this.connections.values()) {
+            connection.dispose();
+        }
     }
 }

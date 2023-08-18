@@ -46,6 +46,7 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
     bind(RemoteConnectionSocketProvider).toSelf().inSingletonScope();
     bind(RemoteTunnelService).toSelf().inSingletonScope();
     bind(RemoteConnectionService).toSelf().inSingletonScope();
+    bind(BackendApplicationContribution).toService(RemoteConnectionService);
     bind(RemoteExpressProxyContribution).toSelf().inSingletonScope();
     bind(BackendApplicationContribution).toService(RemoteExpressProxyContribution);
 

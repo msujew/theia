@@ -335,6 +335,7 @@ export class RemoteSSHConnection implements RemoteConnection {
     }
 
     dispose(): void {
+        this.client.end();
         this.client.destroy();
     }
 
