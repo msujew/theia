@@ -14,35 +14,26 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import * as path from 'path';
-import * as fs from '@theia/core/shared/fs-extra';
-import * as os from 'os';
 import { inject, injectable } from '@theia/core/shared/inversify';
-import { RequestService } from '@theia/core/shared/@theia/request';
-import { RemoteConnection, RemoteExecResult, RemotePlatform, RemoteStatusReport } from './remote-types';
+import { RemoteConnection, RemoteExecResult, RemoteStatusReport } from '../remote-types';
 import { ApplicationPackage } from '@theia/core/shared/@theia/application-package';
 import { RemoteCopyService } from './remote-copy-service';
 import { RemoteNativeDependencyService } from './remote-native-dependency-service';
 import { THEIA_VERSION } from '@theia/core';
-
-/**
- * The current node version that Theia recommends.
- *
- * Native dependencies are compiled against this version.
- */
-export const REMOTE_NODE_VERSION = '16.14.0';
+import { RemoteNodeSetupService } from './remote-node-setup-service';
+import { RemotePlatform } from '@theia/core/lib/node/remote';
 
 @injectable()
 export class RemoteSetupService {
-
-    @inject(RequestService)
-    protected readonly requestService: RequestService;
 
     @inject(RemoteCopyService)
     protected readonly copyService: RemoteCopyService;
 
     @inject(RemoteNativeDependencyService)
     protected readonly nativeDependencyService: RemoteNativeDependencyService;
+
+    @inject(RemoteNodeSetupService)
+    protected readonly nodeSetupService: RemoteNodeSetupService;
 
     @inject(ApplicationPackage)
     protected readonly applicationPackage: ApplicationPackage;
@@ -53,26 +44,35 @@ export class RemoteSetupService {
         const platform = await this.detectRemotePlatform(connection);
         // 2. Setup home directory
         const remoteHome = await this.getRemoteHomeDirectory(connection, platform);
-        const applicationDirectory = this.joinRemotePath(platform, remoteHome, `.${this.getRemoteAppName()}`);
+        const applicationDirectory = RemotePlatform.joinPath(platform, remoteHome, `.${this.getRemoteAppName()}`);
         await this.mkdirRemote(connection, platform, applicationDirectory);
         // 3. Download+copy node for that platform
-        const nodeFileName = this.getNodeFileName(platform);
-        const nodeDirName = this.getNodeDirectoryName(platform);
-        const remoteNodeDirectory = this.joinRemotePath(platform, applicationDirectory, nodeDirName);
+        const nodeFileName = this.nodeSetupService.getNodeFileName(platform);
+        const nodeDirName = this.nodeSetupService.getNodeDirectoryName(platform);
+        const remoteNodeDirectory = RemotePlatform.joinPath(platform, applicationDirectory, nodeDirName);
         const nodeDirExists = await this.dirExistsRemote(connection, remoteNodeDirectory);
         if (!nodeDirExists) {
             report('Downloading and installing Node.js on remote...');
-            const nodeArchive = await this.downloadNode(nodeFileName);
-            const remoteNodeZip = this.joinRemotePath(platform, applicationDirectory, nodeFileName);
-            await connection.copy(nodeArchive, remoteNodeZip);
-            await this.unzipRemote(connection, remoteNodeZip, applicationDirectory);
+            const remoteNodeInstallScript = this.nodeSetupService.generateDownloadScript(platform, applicationDirectory);
+            const nodeInstallResult = await connection.exec('sh -c', [remoteNodeInstallScript]);
+            if (nodeInstallResult.stderr) {
+                console.log('Failed executing install script: ' + nodeInstallResult.stderr);
+                // The install script has resulted in an error
+                // Download the binaries locally and move it via SSH
+                const nodeArchive = await this.nodeSetupService.downloadNode(platform);
+                const remoteNodeZip = RemotePlatform.joinPath(platform, applicationDirectory, nodeFileName);
+                await connection.copy(nodeArchive, remoteNodeZip);
+                await this.unzipRemote(connection, remoteNodeZip, applicationDirectory);
+            } else {
+                console.log('Successfully executed install script: ' + nodeInstallResult.stdout);
+            }
         }
         // 4. Copy backend to remote system
-        const libDir = this.joinRemotePath(platform, applicationDirectory, 'lib');
+        const libDir = RemotePlatform.joinPath(platform, applicationDirectory, 'lib');
         const libDirExists = await this.dirExistsRemote(connection, libDir);
         if (!libDirExists) {
             report('Copying application to remote...');
-            const applicationZipFile = this.joinRemotePath(platform, applicationDirectory, `${this.getRemoteAppName()}.tar`);
+            const applicationZipFile = RemotePlatform.joinPath(platform, applicationDirectory, `${this.getRemoteAppName()}.tar`);
             await this.copyService.copyToRemote(connection, platform, applicationZipFile);
             await this.unzipRemote(connection, applicationZipFile, applicationDirectory);
         }
@@ -83,8 +83,8 @@ export class RemoteSetupService {
     }
 
     protected async startApplication(connection: RemoteConnection, platform: RemotePlatform, remotePath: string, nodeDir: string): Promise<number> {
-        const nodeExecutable = this.joinRemotePath(platform, nodeDir, 'bin', platform === 'windows' ? 'node.exe' : 'node');
-        const mainJsFile = this.joinRemotePath(platform, remotePath, 'lib', 'backend', 'main.js');
+        const nodeExecutable = RemotePlatform.joinPath(platform, nodeDir, 'bin', platform === 'windows' ? 'node.exe' : 'node');
+        const mainJsFile = RemotePlatform.joinPath(platform, remotePath, 'lib', 'backend', 'main.js');
         const localAddressRegex = /listening on http:\/\/localhost:(\d+)/;
         // Change to the remote application path and start a node process with the copied main.js file
         // This way, our current working directory is set as expected
@@ -104,7 +104,7 @@ export class RemoteSetupService {
         const result = await this.retry(() => connection.exec('uname -s'));
 
         if (result.stderr) {
-            // Only Windows systems return an error stream here
+            // Only Windows systems return an error output here
             return 'windows';
         } else if (result.stdout) {
             if (result.stdout.includes('windows32') || result.stdout.includes('MINGW64')) {
@@ -116,39 +116,6 @@ export class RemoteSetupService {
             }
         }
         throw new Error('Failed to identify remote system: ' + result.stdout + '\n' + result.stderr);
-    }
-
-    protected getNodeDirectoryName(platform: RemotePlatform): string {
-        const platformId = platform === 'windows' ? 'win' : platform;
-        // Always use x64 architecture for now
-        const arch = 'x64';
-        const dirName = `node-v${REMOTE_NODE_VERSION}-${platformId}-${arch}`;
-        return dirName;
-    }
-
-    protected getNodeFileName(platform: RemotePlatform): string {
-        let fileExtension = '';
-        if (platform === 'windows') {
-            fileExtension = 'zip';
-        } else if (platform === 'darwin') {
-            fileExtension = 'tar.gz';
-        } else {
-            fileExtension = 'tar.xz';
-        }
-        return `${this.getNodeDirectoryName(platform)}.${fileExtension}`;
-    }
-
-    protected async downloadNode(fileName: string): Promise<string> {
-        const tmpdir = os.tmpdir();
-        const localPath = path.join(tmpdir, fileName);
-        if (!await fs.pathExists(localPath)) {
-            const downloadPath = `https://nodejs.org/dist/v${REMOTE_NODE_VERSION}/${fileName}`;
-            const downloadResult = await this.requestService.request({
-                url: downloadPath
-            });
-            await fs.writeFile(localPath, downloadResult.buffer);
-        }
-        return localPath;
     }
 
     protected async getRemoteHomeDirectory(connection: RemoteConnection, platform: RemotePlatform): Promise<string> {
@@ -174,11 +141,6 @@ export class RemoteSetupService {
 
     protected cleanupDirectoryName(name: string): string {
         return name.replace(/[@<>:"\\|?*]/g, '').replace(/\//g, '-');
-    }
-
-    protected joinRemotePath(platform: RemotePlatform, ...segments: string[]): string {
-        const separator = platform === 'windows' ? '\\' : '/';
-        return segments.join(separator);
     }
 
     protected async mkdirRemote(connection: RemoteConnection, platform: RemotePlatform, remotePath: string): Promise<void> {

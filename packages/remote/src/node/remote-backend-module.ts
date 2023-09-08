@@ -26,11 +26,13 @@ import { ConnectionContainerModule } from '@theia/core/lib/node/messaging/connec
 import { RemoteSSHConnectionProvider, RemoteSSHConnectionProviderPath } from '../common/remote-ssh-connection-provider';
 import { RemoteSSHConnectionProviderImpl } from './ssh/remote-ssh-connection-provider';
 import { SSHIdentityFileCollector } from './ssh/ssh-identity-file-collector';
-import { RemoteCopyService } from './remote-copy-service';
-import { RemoteSetupService } from './remote-setup-service';
-import { RemoteNativeDependencyService } from './remote-native-dependency-service';
+import { RemoteCopyService } from './setup/remote-copy-service';
+import { RemoteSetupService } from './setup/remote-setup-service';
+import { RemoteNativeDependencyService } from './setup/remote-native-dependency-service';
 import { BackendRemoteServiceImpl } from './backend-remote-service-impl';
 import { BackendRemoteService } from '@theia/core/lib/node/remote/backend-remote-service';
+import { RemoteNodeSetupService } from './setup/remote-node-setup-service';
+import { RemoteSetupScriptService } from './setup/remote-setup-script-service';
 
 export const remoteConnectionModule = ConnectionContainerModule.create(({ bind, bindBackendService }) => {
     bind(RemoteSSHConnectionProviderImpl).toSelf().inSingletonScope();
@@ -41,6 +43,8 @@ export const remoteConnectionModule = ConnectionContainerModule.create(({ bind, 
 export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
     bind(RemoteCopyService).toSelf().inSingletonScope();
     bind(RemoteSetupService).toSelf().inSingletonScope();
+    bind(RemoteNodeSetupService).toSelf().inSingletonScope();
+    bind(RemoteSetupScriptService).toSelf().inSingletonScope();
     bind(RemoteNativeDependencyService).toSelf().inSingletonScope();
     bind(RemoteProxyServerProvider).toSelf().inSingletonScope();
     bind(RemoteConnectionSocketProvider).toSelf().inSingletonScope();

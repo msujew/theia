@@ -16,8 +16,8 @@
 
 import { ApplicationPackage } from '@theia/core/shared/@theia/application-package';
 import { inject, injectable, named } from '@theia/core/shared/inversify';
-import { RemoteCopyContribution, RemoteCopyRegistry, RemoteFile } from '@theia/core/lib/node/remote/remote-copy-contribution';
-import { RemoteConnection, RemotePlatform } from './remote-types';
+import { RemotePlatform, RemoteCopyContribution, RemoteCopyRegistry, RemoteFile } from '@theia/core/lib/node/remote';
+import { RemoteConnection } from '../remote-types';
 import { ContributionProvider } from '@theia/core';
 import * as archiver from 'archiver';
 import * as path from 'path';
@@ -106,5 +106,9 @@ export class RemoteCopyService {
         const dir = path.join(os.tmpdir(), 'theia-remote-');
         const tempDir = await fs.promises.mkdtemp(dir);
         return tempDir;
+    }
+
+    protected async getRemoteDownloadLocation(): Promise<string | undefined> {
+        return undefined;
     }
 }

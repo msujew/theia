@@ -24,6 +24,13 @@ export interface FileDependencyResult {
 
 export type RemotePlatform = 'windows' | 'linux' | 'darwin';
 
+export namespace RemotePlatform {
+    export function joinPath(platform: RemotePlatform, ...segments: string[]): string {
+        const separator = platform === 'windows' ? '\\' : '/';
+        return segments.join(separator);
+    }
+}
+
 export type DependencyDownload = FileDependencyDownload | DirectoryDependencyDownload;
 
 export interface FileDependencyDownload {

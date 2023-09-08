@@ -18,8 +18,8 @@ import { inject, injectable } from '@theia/core/shared/inversify';
 import { RemoteConnection } from './remote-types';
 import { nanoid } from 'nanoid';
 import { Disposable } from '@theia/core';
-import { RemoteCopyService } from './remote-copy-service';
-import { RemoteNativeDependencyService } from './remote-native-dependency-service';
+import { RemoteCopyService } from './setup/remote-copy-service';
+import { RemoteNativeDependencyService } from './setup/remote-native-dependency-service';
 import { BackendApplicationContribution } from '@theia/core/lib/node';
 
 @injectable()

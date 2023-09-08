@@ -15,10 +15,7 @@
 // *****************************************************************************
 
 import { Disposable, Emitter, Event } from '@theia/core';
-import { RemotePlatform } from '@theia/core/lib/node/remote';
 import * as net from 'net';
-
-export { RemotePlatform };
 
 export type RemoteStatusReport = (message: string) => void;
 

@@ -27,7 +27,7 @@ import SftpClient = require('ssh2-sftp-client');
 import * as net from 'net';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import { SSHIdentityFileCollector, SSHKey } from './ssh-identity-file-collector';
-import { RemoteSetupService } from '../remote-setup-service';
+import { RemoteSetupService } from '../setup/remote-setup-service';
 
 @injectable()
 export class RemoteSSHConnectionProviderImpl implements RemoteSSHConnectionProvider {
